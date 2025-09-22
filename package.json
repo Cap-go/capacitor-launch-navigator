@@ -1,7 +1,7 @@
 {
   "name": "@capgo/capacitor-launch-navigator",
   "version": "0.0.1",
-  "description": "plugin which launches native route navigation apps for Android, iOS",
+  "description": "Capacitor plugin which launches native route navigation apps for Android, iOS",
   "main": "dist/plugin.cjs.js",
   "module": "dist/esm/index.js",
   "types": "dist/esm/index.d.ts",
