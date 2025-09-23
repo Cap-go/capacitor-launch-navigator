@@ -1,6 +1,6 @@
 {
   "name": "@capgo/capacitor-launch-navigator",
-  "version": "7.0.1",
+  "version": "7.0.0",
   "description": "Capacitor plugin which launches native route navigation apps for Android, iOS",
   "main": "dist/plugin.cjs.js",
   "module": "dist/esm/index.js",
@@ -27,7 +27,19 @@
   "keywords": [
     "capacitor",
     "plugin",
-    "native"
+    "native",
+    "launch",
+    "navigator",
+    "navigation",
+    "maps",
+    "google maps",
+    "apple maps",
+    "waze",
+    "uber", "lyft",
+    "transit",
+    "taxi", "directions",
+    "routing", "geo",
+    "location", "gps"
   ],
   "scripts": {
     "verify": "npm run verify:ios && npm run verify:android && npm run verify:web",
