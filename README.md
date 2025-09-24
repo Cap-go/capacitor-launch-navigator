@@ -246,7 +246,9 @@ Result of checking app availability
 
 Construct a type with a set of properties K of type T
 
-<code>{ [P in K]: T; }</code>
+<code>{
+ [P in K]: T;
+ }</code>
 
 
 ### Enums
@@ -314,3 +316,5 @@ Construct a type with a set of properties K of type T
 | **`GEO`**          | <code>'geo'</code>          |
 
 </docgen-api>
+
+This plugin was inspired by the work of https://github.com/dpa99c/phonegap-launch-navigator
