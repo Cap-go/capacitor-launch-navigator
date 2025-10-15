@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [7.0.8](https://github.com/Cap-go/capacitor-launch-navigator/compare/7.0.7...7.0.8) (2025-10-15)
+
+
+### Bug Fixes
+
+* lint config ([a157367](https://github.com/Cap-go/capacitor-launch-navigator/commit/a1573674517169161fed31478a9b8d14eaa8d91c))
+
 ## [7.0.7](https://github.com/Cap-go/capacitor-launch-navigator/compare/7.0.6...7.0.7) (2025-10-14)
 
 ## [7.0.6](https://github.com/Cap-go/capacitor-launch-navigator/compare/7.0.5...7.0.6) (2025-10-11)
