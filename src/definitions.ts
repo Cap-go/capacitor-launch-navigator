@@ -19,7 +19,7 @@ export enum IOSNavigationApp {
   CABIFY = 'cabify',
   BAIDU = 'baidu',
   GAODE = 'gaode',
-  TAXI_99 = '99taxi'
+  TAXI_99 = '99taxi',
 }
 
 /**
@@ -38,7 +38,7 @@ export enum AndroidNavigationApp {
   MAPS_ME = 'mapsme',
   CABIFY = 'cabify',
   BAIDU = 'baidu',
-  GAODE = 'gaode'
+  GAODE = 'gaode',
 }
 
 /**
@@ -48,7 +48,7 @@ export enum TransportMode {
   DRIVING = 'driving',
   WALKING = 'walking',
   BICYCLING = 'bicycling',
-  TRANSIT = 'transit'
+  TRANSIT = 'transit',
 }
 
 /**
@@ -57,7 +57,7 @@ export enum TransportMode {
 export enum LaunchMode {
   MAPS = 'maps',
   TURN_BY_TURN = 'turn_by_turn',
-  GEO = 'geo'
+  GEO = 'geo',
 }
 
 /**

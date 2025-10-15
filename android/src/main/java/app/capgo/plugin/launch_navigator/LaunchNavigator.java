@@ -4,13 +4,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
-
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
-
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Locale;
+import java.util.Map;
 
 public class LaunchNavigator {
 
@@ -18,6 +16,7 @@ public class LaunchNavigator {
     private Map<String, AppInfo> navigationApps;
 
     private static class AppInfo {
+
         String name;
         String packageName;
 
@@ -162,10 +161,21 @@ public class LaunchNavigator {
     private Intent createUberIntent(double lat, double lon, Double startLat, Double startLon) {
         String uri;
         if (startLat != null && startLon != null) {
-            uri = String.format(Locale.US, "uber://?action=setPickup&pickup[latitude]=%f&pickup[longitude]=%f&dropoff[latitude]=%f&dropoff[longitude]=%f",
-                startLat, startLon, lat, lon);
+            uri = String.format(
+                Locale.US,
+                "uber://?action=setPickup&pickup[latitude]=%f&pickup[longitude]=%f&dropoff[latitude]=%f&dropoff[longitude]=%f",
+                startLat,
+                startLon,
+                lat,
+                lon
+            );
         } else {
-            uri = String.format(Locale.US, "uber://?action=setPickup&pickup=my_location&dropoff[latitude]=%f&dropoff[longitude]=%f", lat, lon);
+            uri = String.format(
+                Locale.US,
+                "uber://?action=setPickup&pickup=my_location&dropoff[latitude]=%f&dropoff[longitude]=%f",
+                lat,
+                lon
+            );
         }
         return new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
     }
@@ -173,8 +183,14 @@ public class LaunchNavigator {
     private Intent createYandexIntent(double lat, double lon, Double startLat, Double startLon) {
         String uri;
         if (startLat != null && startLon != null) {
-            uri = String.format(Locale.US, "yandexnavi://build_route_on_map?lat_from=%f&lon_from=%f&lat_to=%f&lon_to=%f",
-                startLat, startLon, lat, lon);
+            uri = String.format(
+                Locale.US,
+                "yandexnavi://build_route_on_map?lat_from=%f&lon_from=%f&lat_to=%f&lon_to=%f",
+                startLat,
+                startLon,
+                lat,
+                lon
+            );
         } else {
             uri = String.format(Locale.US, "yandexnavi://build_route_on_map?lat_to=%f&lon_to=%f", lat, lon);
         }
@@ -217,8 +233,14 @@ public class LaunchNavigator {
     private Intent createCabifyIntent(double lat, double lon, Double startLat, Double startLon) {
         String uri;
         if (startLat != null && startLon != null) {
-            uri = String.format(Locale.US, "cabify://ride?pickup[latitude]=%f&pickup[longitude]=%f&dropoff[latitude]=%f&dropoff[longitude]=%f",
-                startLat, startLon, lat, lon);
+            uri = String.format(
+                Locale.US,
+                "cabify://ride?pickup[latitude]=%f&pickup[longitude]=%f&dropoff[latitude]=%f&dropoff[longitude]=%f",
+                startLat,
+                startLon,
+                lat,
+                lon
+            );
         } else {
             uri = String.format(Locale.US, "cabify://rideto?lat=%f&lng=%f", lat, lon);
         }

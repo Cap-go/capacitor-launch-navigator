@@ -1,7 +1,7 @@
 package app.capgo.plugin.launch_navigator;
 
-import com.getcapacitor.JSObject;
 import com.getcapacitor.JSArray;
+import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
@@ -50,16 +50,7 @@ public class LaunchNavigatorPlugin extends Plugin {
             String startName = options.getString("startName");
             String destinationName = options.getString("destinationName");
 
-            boolean result = implementation.navigate(
-                app,
-                lat,
-                lon,
-                startLat,
-                startLon,
-                startName,
-                destinationName,
-                transportMode
-            );
+            boolean result = implementation.navigate(app, lat, lon, startLat, startLon, startName, destinationName, transportMode);
 
             if (result) {
                 call.resolve();
