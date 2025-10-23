@@ -127,6 +127,7 @@ apps.forEach(app => {
 * [`getAvailableApps()`](#getavailableapps)
 * [`getSupportedApps()`](#getsupportedapps)
 * [`getDefaultApp()`](#getdefaultapp)
+* [`getPluginVersion()`](#getpluginversion)
 * [Interfaces](#interfaces)
 * [Type Aliases](#type-aliases)
 * [Enums](#enums)
@@ -205,6 +206,19 @@ getDefaultApp() => Promise<{ app: string; }>
 Get the name of the default app for navigation
 
 **Returns:** <code>Promise&lt;{ app: string; }&gt;</code>
+
+--------------------
+
+
+### getPluginVersion()
+
+```typescript
+getPluginVersion() => Promise<{ version: string; }>
+```
+
+Get the native Capacitor plugin version
+
+**Returns:** <code>Promise&lt;{ version: string; }&gt;</code>
 
 --------------------
 

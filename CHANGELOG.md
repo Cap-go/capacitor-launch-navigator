@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [7.1.0](https://github.com/Cap-go/capacitor-launch-navigator/compare/7.0.10...7.1.0) (2025-10-23)
+
+
+### Features
+
+* add getPluginVersion method to LaunchNavigatorPlugin and web implementation ([cf0ff41](https://github.com/Cap-go/capacitor-launch-navigator/commit/cf0ff412705bc69774cecda705c7af45aa3ea5e6))
+
+
+### Bug Fixes
+
+* remove content field from Discord release notification ([f8215d3](https://github.com/Cap-go/capacitor-launch-navigator/commit/f8215d3e29f08a6a33fccc61fe5085dbf8e89c4f))
+
 ## [7.0.10](https://github.com/Cap-go/capacitor-launch-navigator/compare/7.0.9...7.0.10) (2025-10-16)
 
 ## [7.0.9](https://github.com/Cap-go/capacitor-launch-navigator/compare/7.0.8...7.0.9) (2025-10-15)
