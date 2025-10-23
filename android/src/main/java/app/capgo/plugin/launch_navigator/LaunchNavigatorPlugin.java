@@ -10,6 +10,8 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 @CapacitorPlugin(name = "LaunchNavigator")
 public class LaunchNavigatorPlugin extends Plugin {
 
+    private final String PLUGIN_VERSION = "";
+
     private LaunchNavigator implementation;
 
     @Override
@@ -100,5 +102,16 @@ public class LaunchNavigatorPlugin extends Plugin {
         JSObject ret = new JSObject();
         ret.put("app", "google_maps");
         call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void getPluginVersion(final PluginCall call) {
+        try {
+            final JSObject ret = new JSObject();
+            ret.put("version", this.PLUGIN_VERSION);
+            call.resolve(ret);
+        } catch (final Exception e) {
+            call.reject("Could not get plugin version", e);
+        }
     }
 }

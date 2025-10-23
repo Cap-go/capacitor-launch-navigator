@@ -9,6 +9,7 @@ import MapKit
  */
 @objc(LaunchNavigatorPlugin)
 public class LaunchNavigatorPlugin: CAPPlugin, CAPBridgedPlugin {
+    private let PLUGIN_VERSION: String = ""
     public let identifier = "LaunchNavigatorPlugin"
     public let jsName = "LaunchNavigator"
     public let pluginMethods: [CAPPluginMethod] = [
@@ -16,7 +17,8 @@ public class LaunchNavigatorPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "isAppAvailable", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "getAvailableApps", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "getSupportedApps", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "getDefaultApp", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "getDefaultApp", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "getPluginVersion", returnType: CAPPluginReturnPromise)
     ]
     private let implementation = LaunchNavigator()
 
@@ -91,4 +93,9 @@ public class LaunchNavigatorPlugin: CAPPlugin, CAPBridgedPlugin {
             "app": "apple_maps"
         ])
     }
+
+    @objc func getPluginVersion(_ call: CAPPluginCall) {
+        call.resolve(["version": self.PLUGIN_VERSION])
+    }
+
 }

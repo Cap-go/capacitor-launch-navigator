@@ -80,4 +80,8 @@ export class LaunchNavigatorWeb extends WebPlugin implements LaunchNavigatorPlug
       app: 'google_maps',
     };
   }
+
+  async getPluginVersion(): Promise<{ version: string }> {
+    return { version: 'web' };
+  }
 }
