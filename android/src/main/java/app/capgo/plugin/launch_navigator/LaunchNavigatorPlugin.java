@@ -10,7 +10,7 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 @CapacitorPlugin(name = "LaunchNavigator")
 public class LaunchNavigatorPlugin extends Plugin {
 
-    private final String PLUGIN_VERSION = "7.1.1";
+    private final String PLUGIN_VERSION = "7.1.2";
 
     private LaunchNavigator implementation;
 
