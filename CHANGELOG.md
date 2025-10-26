@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [7.1.3](https://github.com/Cap-go/capacitor-launch-navigator/compare/7.1.2...7.1.3) (2025-10-26)
+
+
+### Bug Fixes
+
+* prevent bump for app ([e8223e3](https://github.com/Cap-go/capacitor-launch-navigator/commit/e8223e3a73e886d00174c2659821b74fdf81ae47))
+
 ## [7.1.2](https://github.com/Cap-go/capacitor-launch-navigator/compare/7.1.1...7.1.2) (2025-10-26)
 
 ## [7.1.1](https://github.com/Cap-go/capacitor-launch-navigator/compare/7.1.0...7.1.1) (2025-10-23)
