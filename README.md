@@ -10,6 +10,10 @@ Capacitor plugin for launching navigation apps to navigate to a destination.
 
 This plugin is a Capacitor port of the popular phonegap-launch-navigator plugin, supporting navigation with latitude/longitude coordinates only (no address support - use [@capgo/capacitor-nativegeocoder](https://github.com/Cap-go/capacitor-nativegeocoder) for address geocoding).
 
+## Documentation
+
+The most complete doc is available here: https://capgo.app/docs/plugins/launch-navigator/
+
 ## Install
 
 ```bash
