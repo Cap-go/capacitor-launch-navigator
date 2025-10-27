@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [7.1.4](https://github.com/Cap-go/capacitor-launch-navigator/compare/7.1.3...7.1.4) (2025-10-27)
+
+
+### Bug Fixes
+
+* build ([652051d](https://github.com/Cap-go/capacitor-launch-navigator/commit/652051d93e747a26cfbf24319fc4e3f96ea2d684))
+* renovate capacitor dep ([1186145](https://github.com/Cap-go/capacitor-launch-navigator/commit/1186145aa3793a4f87a096fd09a51edf8594aba3))
+
 ## [7.1.3](https://github.com/Cap-go/capacitor-launch-navigator/compare/7.1.2...7.1.3) (2025-10-26)
 
 
