@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [7.1.5](https://github.com/Cap-go/capacitor-launch-navigator/compare/7.1.4...7.1.5) (2025-10-29)
+
+
+### Bug Fixes
+
+* CI/CD config ([fc30470](https://github.com/Cap-go/capacitor-launch-navigator/commit/fc30470d26cf2fe7599856b2f0d79604b002db52))
+* update AI model in build workflow ([112d709](https://github.com/Cap-go/capacitor-launch-navigator/commit/112d7093885cae11a3d4bb21dc831977214a5025))
+* update github action ([5639526](https://github.com/Cap-go/capacitor-launch-navigator/commit/5639526b6ac039e220fe812b59af84682dcba910))
+
 ## [7.1.4](https://github.com/Cap-go/capacitor-launch-navigator/compare/7.1.3...7.1.4) (2025-10-27)
 
 

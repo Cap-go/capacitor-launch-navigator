@@ -9,7 +9,7 @@ import MapKit
  */
 @objc(LaunchNavigatorPlugin)
 public class LaunchNavigatorPlugin: CAPPlugin, CAPBridgedPlugin {
-    private let PLUGIN_VERSION: String = "7.1.4"
+    private let PLUGIN_VERSION: String = "7.1.5"
     public let identifier = "LaunchNavigatorPlugin"
     public let jsName = "LaunchNavigator"
     public let pluginMethods: [CAPPluginMethod] = [
