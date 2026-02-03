@@ -59,6 +59,32 @@ Add URL schemes to your `Info.plist` to detect installed navigation apps:
 </array>
 ```
 
+## Android Setup
+
+For Android 11+ (API level 30+), add package queries to your `AndroidManifest.xml` to detect installed navigation apps:
+
+```xml
+<queries>
+    <package android:name="com.google.android.apps.maps" />
+    <package android:name="com.waze" />
+    <package android:name="com.citymapper.app.release" />
+    <package android:name="com.ubercab" />
+    <package android:name="ru.yandex.yandexnavi" />
+    <package android:name="com.sygic.aura" />
+    <package android:name="com.here.app.maps" />
+    <package android:name="com.tranzmate" />
+    <package android:name="me.lyft.android" />
+    <package android:name="com.mapswithme.maps.pro" />
+    <package android:name="com.cabify.rider" />
+    <package android:name="com.baidu.BaiduMap" />
+    <package android:name="com.autonavi.minimap" />
+</queries>
+```
+
+Add this section inside the `<manifest>` tag but outside the `<application>` tag in your `android/app/src/main/AndroidManifest.xml` file.
+
+> **Note:** This is required for Android 11+ due to [package visibility changes](https://developer.android.com/training/package-visibility). Without these queries, the plugin will be unable to detect installed navigation apps on devices running Android 11 or higher.
+
 ## Usage
 
 ```typescript

@@ -1,2 +1,17 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <queries>
+        <package android:name="com.google.android.apps.maps" />
+        <package android:name="com.waze" />
+        <package android:name="com.citymapper.app.release" />
+        <package android:name="com.ubercab" />
+        <package android:name="ru.yandex.yandexnavi" />
+        <package android:name="com.sygic.aura" />
+        <package android:name="com.here.app.maps" />
+        <package android:name="com.tranzmate" />
+        <package android:name="me.lyft.android" />
+        <package android:name="com.mapswithme.maps.pro" />
+        <package android:name="com.cabify.rider" />
+        <package android:name="com.baidu.BaiduMap" />
+        <package android:name="com.autonavi.minimap" />
+    </queries>
 </manifest>
