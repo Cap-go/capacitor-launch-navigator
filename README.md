@@ -61,7 +61,14 @@ Add URL schemes to your `Info.plist` to detect installed navigation apps:
 
 ## Android Setup
 
-For Android 11+ (API level 30+), add package queries to your `AndroidManifest.xml` to detect installed navigation apps:
+**No additional setup required!** The plugin automatically handles Android 11+ (API level 30+) package visibility.
+
+The plugin's manifest includes the necessary `<queries>` declarations for all supported navigation apps, which are automatically merged into your app's manifest during the build process.
+
+<details>
+<summary>For reference: Package queries included in the plugin</summary>
+
+The following navigation apps are declared in the plugin's manifest:
 
 ```xml
 <queries>
@@ -81,9 +88,9 @@ For Android 11+ (API level 30+), add package queries to your `AndroidManifest.xm
 </queries>
 ```
 
-Add this section inside the `<manifest>` tag but outside the `<application>` tag in your `android/app/src/main/AndroidManifest.xml` file.
+These queries enable the plugin to detect installed navigation apps on Android 11+ devices, as required by [Android's package visibility changes](https://developer.android.com/training/package-visibility).
 
-> **Note:** This is required for Android 11+ due to [package visibility changes](https://developer.android.com/training/package-visibility). Without these queries, the plugin will be unable to detect installed navigation apps on devices running Android 11 or higher.
+</details>
 
 ## Usage
 
