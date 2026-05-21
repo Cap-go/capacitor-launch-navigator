@@ -51,7 +51,8 @@ public class LaunchNavigatorPlugin: CAPPlugin, CAPBridgedPlugin {
                 start: start,
                 startName: startName,
                 destinationName: destinationName,
-                transportMode: transportMode
+                transportMode: transportMode,
+                viewController: self.bridge?.viewController
             ) { success, error in
                 if success {
                     call.resolve()

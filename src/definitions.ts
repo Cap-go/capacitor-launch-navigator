@@ -16,9 +16,14 @@ export enum IOSNavigationApp {
   MOOVIT = 'moovit',
   LYFT = 'lyft',
   MAPS_ME = 'mapsme',
+  GURU_MAPS = 'guru_maps',
+  ORGANIC_MAPS = 'organic_maps',
+  YANDEX_MAPS = 'yandex_maps',
+  TWO_GIS = '2gis',
   CABIFY = 'cabify',
   BAIDU = 'baidu',
   GAODE = 'gaode',
+  TESLA = 'tesla',
   TAXI_99 = '99taxi',
 }
 
@@ -36,9 +41,16 @@ export enum AndroidNavigationApp {
   MOOVIT = 'moovit',
   LYFT = 'lyft',
   MAPS_ME = 'mapsme',
+  TOMTOM = 'tomtom',
+  GURU_MAPS = 'guru_maps',
+  ORGANIC_MAPS = 'organic_maps',
+  YANDEX_MAPS = 'yandex_maps',
+  MAPY = 'mapy',
+  TWO_GIS = '2gis',
   CABIFY = 'cabify',
   BAIDU = 'baidu',
   GAODE = 'gaode',
+  TESLA = 'tesla',
 }
 
 /**

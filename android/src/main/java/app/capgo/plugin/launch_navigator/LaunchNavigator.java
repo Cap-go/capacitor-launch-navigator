@@ -6,7 +6,7 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
@@ -18,11 +18,11 @@ public class LaunchNavigator {
     private static class AppInfo {
 
         String name;
-        String packageName;
+        String[] packageNames;
 
-        AppInfo(String name, String packageName) {
+        AppInfo(String name, String... packageNames) {
             this.name = name;
-            this.packageName = packageName;
+            this.packageNames = packageNames;
         }
     }
 
@@ -32,7 +32,7 @@ public class LaunchNavigator {
     }
 
     private void initializeApps() {
-        navigationApps = new HashMap<>();
+        navigationApps = new LinkedHashMap<>();
         navigationApps.put("google_maps", new AppInfo("Google Maps", "com.google.android.apps.maps"));
         navigationApps.put("waze", new AppInfo("Waze", "com.waze"));
         navigationApps.put("citymapper", new AppInfo("Citymapper", "com.citymapper.app.release"));
@@ -43,9 +43,16 @@ public class LaunchNavigator {
         navigationApps.put("moovit", new AppInfo("Moovit", "com.tranzmate"));
         navigationApps.put("lyft", new AppInfo("Lyft", "me.lyft.android"));
         navigationApps.put("mapsme", new AppInfo("MAPS.ME", "com.mapswithme.maps.pro"));
+        navigationApps.put("tomtom", new AppInfo("TomTom GO", "com.tomtom.gplay.navapp"));
+        navigationApps.put("guru_maps", new AppInfo("Guru Maps", "com.bodunov.galileo", "com.bodunov.GalileoPro"));
+        navigationApps.put("organic_maps", new AppInfo("Organic Maps", "app.organicmaps"));
+        navigationApps.put("yandex_maps", new AppInfo("Yandex Maps", "ru.yandex.yandexmaps"));
+        navigationApps.put("mapy", new AppInfo("Mapy.com", "cz.seznam.mapy"));
+        navigationApps.put("2gis", new AppInfo("2GIS", "ru.dublgis.dgismobile"));
         navigationApps.put("cabify", new AppInfo("Cabify", "com.cabify.rider"));
         navigationApps.put("baidu", new AppInfo("Baidu Maps", "com.baidu.BaiduMap"));
         navigationApps.put("gaode", new AppInfo("Gaode Maps", "com.autonavi.minimap"));
+        navigationApps.put("tesla", new AppInfo("Tesla", "com.teslamotors.tesla"));
     }
 
     public boolean navigate(
@@ -59,53 +66,9 @@ public class LaunchNavigator {
         String transportMode
     ) {
         try {
-            Intent intent;
+            Intent intent = createNavigationIntent(app, lat, lon, startLat, startLon, destinationName, transportMode);
 
-            switch (app) {
-                case "google_maps":
-                    intent = createGoogleMapsIntent(lat, lon, startLat, startLon, transportMode);
-                    break;
-                case "waze":
-                    intent = createWazeIntent(lat, lon);
-                    break;
-                case "citymapper":
-                    intent = createCitymapperIntent(lat, lon, startLat, startLon);
-                    break;
-                case "uber":
-                    intent = createUberIntent(lat, lon, startLat, startLon);
-                    break;
-                case "yandex":
-                    intent = createYandexIntent(lat, lon, startLat, startLon);
-                    break;
-                case "sygic":
-                    intent = createSygicIntent(lat, lon);
-                    break;
-                case "here":
-                    intent = createHereIntent(lat, lon, startLat, startLon);
-                    break;
-                case "moovit":
-                    intent = createMoovitIntent(lat, lon, startLat, startLon);
-                    break;
-                case "lyft":
-                    intent = createLyftIntent(lat, lon);
-                    break;
-                case "mapsme":
-                    intent = createMapsMeIntent(lat, lon);
-                    break;
-                case "cabify":
-                    intent = createCabifyIntent(lat, lon, startLat, startLon);
-                    break;
-                case "baidu":
-                    intent = createBaiduIntent(lat, lon, startLat, startLon);
-                    break;
-                case "gaode":
-                    intent = createGaodeIntent(lat, lon, startLat, startLon);
-                    break;
-                default:
-                    return false;
-            }
-
-            if (intent != null) {
+            if (intent != null && canHandleIntent(intent)) {
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 context.startActivity(intent);
                 return true;
@@ -115,6 +78,61 @@ public class LaunchNavigator {
         } catch (Exception e) {
             e.printStackTrace();
             return false;
+        }
+    }
+
+    private Intent createNavigationIntent(
+        String app,
+        double lat,
+        double lon,
+        Double startLat,
+        Double startLon,
+        String destinationName,
+        String transportMode
+    ) {
+        switch (app) {
+            case "google_maps":
+                return createGoogleMapsIntent(lat, lon, startLat, startLon, transportMode);
+            case "waze":
+                return createWazeIntent(lat, lon);
+            case "citymapper":
+                return createCitymapperIntent(lat, lon, startLat, startLon);
+            case "uber":
+                return createUberIntent(lat, lon, startLat, startLon);
+            case "yandex":
+                return createYandexIntent(lat, lon, startLat, startLon);
+            case "sygic":
+                return createSygicIntent(lat, lon);
+            case "here":
+                return createHereIntent(lat, lon, startLat, startLon);
+            case "moovit":
+                return createMoovitIntent(lat, lon, startLat, startLon);
+            case "lyft":
+                return createLyftIntent(lat, lon);
+            case "mapsme":
+                return createMapsMeIntent(lat, lon);
+            case "tomtom":
+                return createTomTomIntent(lat, lon);
+            case "guru_maps":
+                return createGuruMapsIntent(lat, lon, startLat, startLon, transportMode);
+            case "organic_maps":
+                return createOrganicMapsIntent(lat, lon, startLat, startLon, destinationName, transportMode);
+            case "yandex_maps":
+                return createYandexMapsIntent(lat, lon, startLat, startLon);
+            case "mapy":
+                return createMapyIntent(lat, lon);
+            case "2gis":
+                return create2GisIntent(lat, lon, startLat, startLon, transportMode);
+            case "cabify":
+                return createCabifyIntent(lat, lon, startLat, startLon);
+            case "baidu":
+                return createBaiduIntent(lat, lon, startLat, startLon);
+            case "gaode":
+                return createGaodeIntent(lat, lon, startLat, startLon);
+            case "tesla":
+                return createTeslaIntent(lat, lon, startLat, startLon, transportMode);
+            default:
+                return null;
         }
     }
 
@@ -230,6 +248,130 @@ public class LaunchNavigator {
         return new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
     }
 
+    private Intent createTomTomIntent(double lat, double lon) {
+        String uri = String.format(Locale.US, "tomtomgo://x-callback-url/navigate?destination=%f,%f", lat, lon);
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
+        intent.setPackage("com.tomtom.gplay.navapp");
+        return intent;
+    }
+
+    private Intent createGuruMapsIntent(double lat, double lon, Double startLat, Double startLon, String transportMode) {
+        String uri = String.format(
+            Locale.US,
+            "guru://nav?finish=%f,%f&mode=%s&start_navigation=true",
+            lat,
+            lon,
+            getGuruMapsMode(transportMode)
+        );
+        if (startLat != null && startLon != null) {
+            uri += String.format(Locale.US, "&start=%f,%f", startLat, startLon);
+        }
+
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
+        String packageName = getFirstInstalledPackage("guru_maps");
+        if (packageName != null) {
+            intent.setPackage(packageName);
+        }
+        return intent;
+    }
+
+    private String getGuruMapsMode(String transportMode) {
+        switch (transportMode) {
+            case "walking":
+                return "pedestrian";
+            case "bicycling":
+                return "bicycle";
+            case "driving":
+            case "transit":
+            default:
+                return "auto";
+        }
+    }
+
+    private Intent createOrganicMapsIntent(
+        double lat,
+        double lon,
+        Double startLat,
+        Double startLon,
+        String destinationName,
+        String transportMode
+    ) {
+        String origin = "currentLocation";
+        if (startLat != null && startLon != null) {
+            origin = String.format(Locale.US, "%f,%f", startLat, startLon);
+        }
+
+        String uri = String.format(
+            Locale.US,
+            "om://v2/nav?origin=%s&destination=%f,%f&mode=%s",
+            Uri.encode(origin),
+            lat,
+            lon,
+            getOrganicMapsMode(transportMode)
+        );
+        if (destinationName != null && !destinationName.isEmpty()) {
+            uri += "&destination_name=" + Uri.encode(destinationName);
+        }
+
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
+        intent.setPackage("app.organicmaps");
+        return intent;
+    }
+
+    private String getOrganicMapsMode(String transportMode) {
+        switch (transportMode) {
+            case "walking":
+                return "pedestrian";
+            case "bicycling":
+                return "bicycle";
+            case "transit":
+                return "transit";
+            case "driving":
+            default:
+                return "drive";
+        }
+    }
+
+    private Intent createYandexMapsIntent(double lat, double lon, Double startLat, Double startLon) {
+        String uri = String.format(Locale.US, "yandexmaps://build_route_on_map/?lat_to=%f&lon_to=%f", lat, lon);
+        if (startLat != null && startLon != null) {
+            uri += String.format(Locale.US, "&lat_from=%f&lon_from=%f", startLat, startLon);
+        }
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
+        intent.setPackage("ru.yandex.yandexmaps");
+        return intent;
+    }
+
+    private Intent createMapyIntent(double lat, double lon) {
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(String.format(Locale.US, "geo:0,0?q=%f,%f", lat, lon)));
+        intent.setPackage("cz.seznam.mapy");
+        return intent;
+    }
+
+    private Intent create2GisIntent(double lat, double lon, Double startLat, Double startLon, String transportMode) {
+        String uri = String.format(Locale.US, "dgis://2gis.ru/routeSearch/rsType/%s", get2GisMode(transportMode));
+        if (startLat != null && startLon != null) {
+            uri += String.format(Locale.US, "/from/%f,%f", startLon, startLat);
+        }
+        uri += String.format(Locale.US, "/to/%f,%f", lon, lat);
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
+        intent.setPackage("ru.dublgis.dgismobile");
+        return intent;
+    }
+
+    private String get2GisMode(String transportMode) {
+        switch (transportMode) {
+            case "walking":
+                return "pedestrian";
+            case "transit":
+                return "ctx";
+            case "driving":
+            case "bicycling":
+            default:
+                return "car";
+        }
+    }
+
     private Intent createCabifyIntent(double lat, double lon, Double startLat, Double startLon) {
         String uri;
         if (startLat != null && startLon != null) {
@@ -267,19 +409,68 @@ public class LaunchNavigator {
         return intent;
     }
 
+    private Intent createTeslaIntent(double lat, double lon, Double startLat, Double startLon, String transportMode) {
+        Intent intent = new Intent(Intent.ACTION_SEND);
+        intent.setType("text/plain");
+        intent.putExtra(Intent.EXTRA_TEXT, createGoogleMapsWebUrl(lat, lon, startLat, startLon, transportMode));
+        intent.setPackage("com.teslamotors.tesla");
+        return intent;
+    }
+
+    private String createGoogleMapsWebUrl(double lat, double lon, Double startLat, Double startLon, String transportMode) {
+        String url = String.format(
+            Locale.US,
+            "https://www.google.com/maps/dir/?api=1&destination=%f,%f&travelmode=%s",
+            lat,
+            lon,
+            getGoogleMapsTravelMode(transportMode)
+        );
+        if (startLat != null && startLon != null) {
+            url += String.format(Locale.US, "&origin=%f,%f", startLat, startLon);
+        }
+        return url;
+    }
+
+    private String getGoogleMapsTravelMode(String transportMode) {
+        switch (transportMode) {
+            case "walking":
+                return "walking";
+            case "bicycling":
+                return "bicycling";
+            case "transit":
+                return "transit";
+            case "driving":
+            default:
+                return "driving";
+        }
+    }
+
     public boolean isAppAvailable(String app) {
+        Intent intent = createNavigationIntent(app, 0, 0, null, null, null, "driving");
+        return intent != null && canHandleIntent(intent);
+    }
+
+    private boolean canHandleIntent(Intent intent) {
+        PackageManager pm = context.getPackageManager();
+        return intent.resolveActivity(pm) != null || !pm.queryIntentActivities(intent, 0).isEmpty();
+    }
+
+    private String getFirstInstalledPackage(String app) {
         AppInfo appInfo = navigationApps.get(app);
         if (appInfo == null) {
-            return false;
+            return null;
         }
 
         PackageManager pm = context.getPackageManager();
-        try {
-            pm.getPackageInfo(appInfo.packageName, PackageManager.GET_ACTIVITIES);
-            return true;
-        } catch (PackageManager.NameNotFoundException e) {
-            return false;
+        for (String packageName : appInfo.packageNames) {
+            try {
+                pm.getPackageInfo(packageName, PackageManager.GET_ACTIVITIES);
+                return packageName;
+            } catch (PackageManager.NameNotFoundException e) {
+                // Try the next package for apps that ship multiple variants.
+            }
         }
+        return null;
     }
 
     public JSArray getAvailableApps() {

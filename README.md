@@ -52,9 +52,14 @@ Add URL schemes to your `Info.plist` to detect installed navigation apps:
     <string>moovit</string>
     <string>lyft</string>
     <string>mapsme</string>
+    <string>guru</string>
+    <string>om</string>
+    <string>yandexmaps</string>
+    <string>dgis</string>
     <string>cabify</string>
     <string>baidumap</string>
     <string>iosamap</string>
+    <string>tesla</string>
     <string>99app</string>
 </array>
 ```
@@ -82,9 +87,17 @@ The following navigation apps are declared in the plugin's manifest:
     <package android:name="com.tranzmate" />
     <package android:name="me.lyft.android" />
     <package android:name="com.mapswithme.maps.pro" />
+    <package android:name="com.tomtom.gplay.navapp" />
+    <package android:name="com.bodunov.galileo" />
+    <package android:name="com.bodunov.GalileoPro" />
+    <package android:name="app.organicmaps" />
+    <package android:name="ru.yandex.yandexmaps" />
+    <package android:name="cz.seznam.mapy" />
+    <package android:name="ru.dublgis.dgismobile" />
     <package android:name="com.cabify.rider" />
     <package android:name="com.baidu.BaiduMap" />
     <package android:name="com.autonavi.minimap" />
+    <package android:name="com.teslamotors.tesla" />
 </queries>
 ```
 
@@ -116,6 +129,15 @@ await LaunchNavigator.navigate({
     }
 });
 
+// Share a Google Maps directions link to the Tesla app
+await LaunchNavigator.navigate({
+    destination: [37.7749, -122.4194],
+    options: {
+        app: 'tesla',
+        transportMode: TransportMode.DRIVING
+    }
+});
+
 // Check if an app is available
 const { available } = await LaunchNavigator.isAppAvailable({
     app: IOSNavigationApp.GOOGLE_MAPS
@@ -132,6 +154,7 @@ apps.forEach(app => {
 
 - **Coordinates Only**: This plugin only accepts latitude/longitude coordinates for navigation. Address strings are not supported.
 - **Address Geocoding**: If you need to convert addresses to coordinates, use [@capgo/capacitor-nativegeocoder](https://github.com/Cap-go/capacitor-nativegeocoder).
+- **Tesla**: Android shares a Google Maps directions URL directly to the Tesla app. iOS opens the native share sheet with the same Google Maps URL so users can pick Tesla.
 
 ## Supported Navigation Apps
 
@@ -150,9 +173,14 @@ apps.forEach(app => {
 - Moovit
 - Lyft
 - MAPS.ME
+- Guru Maps
+- Organic Maps
+- Yandex Maps
+- 2GIS
 - Cabify
 - Baidu Maps
 - Gaode Maps
+- Tesla
 - 99 Taxi
 
 ### Android
@@ -166,9 +194,16 @@ apps.forEach(app => {
 - Moovit
 - Lyft
 - MAPS.ME
+- TomTom GO
+- Guru Maps
+- Organic Maps
+- Yandex Maps
+- Mapy.com
+- 2GIS
 - Cabify
 - Baidu Maps
 - Gaode Maps
+- Tesla
 
 ## API
 
@@ -346,29 +381,41 @@ Construct a type with a set of properties K of type T
 | **`MOOVIT`**           | <code>'moovit'</code>         |
 | **`LYFT`**             | <code>'lyft'</code>           |
 | **`MAPS_ME`**          | <code>'mapsme'</code>         |
+| **`GURU_MAPS`**        | <code>'guru_maps'</code>      |
+| **`ORGANIC_MAPS`**     | <code>'organic_maps'</code>   |
+| **`YANDEX_MAPS`**      | <code>'yandex_maps'</code>    |
+| **`TWO_GIS`**          | <code>'2gis'</code>           |
 | **`CABIFY`**           | <code>'cabify'</code>         |
 | **`BAIDU`**            | <code>'baidu'</code>          |
 | **`GAODE`**            | <code>'gaode'</code>          |
+| **`TESLA`**            | <code>'tesla'</code>          |
 | **`TAXI_99`**          | <code>'99taxi'</code>         |
 
 
 #### AndroidNavigationApp
 
-| Members           | Value                      |
-| ----------------- | -------------------------- |
-| **`GOOGLE_MAPS`** | <code>'google_maps'</code> |
-| **`WAZE`**        | <code>'waze'</code>        |
-| **`CITYMAPPER`**  | <code>'citymapper'</code>  |
-| **`UBER`**        | <code>'uber'</code>        |
-| **`YANDEX`**      | <code>'yandex'</code>      |
-| **`SYGIC`**       | <code>'sygic'</code>       |
-| **`HERE_MAPS`**   | <code>'here'</code>        |
-| **`MOOVIT`**      | <code>'moovit'</code>      |
-| **`LYFT`**        | <code>'lyft'</code>        |
-| **`MAPS_ME`**     | <code>'mapsme'</code>      |
-| **`CABIFY`**      | <code>'cabify'</code>      |
-| **`BAIDU`**       | <code>'baidu'</code>       |
-| **`GAODE`**       | <code>'gaode'</code>       |
+| Members            | Value                       |
+| ------------------ | --------------------------- |
+| **`GOOGLE_MAPS`**  | <code>'google_maps'</code>  |
+| **`WAZE`**         | <code>'waze'</code>         |
+| **`CITYMAPPER`**   | <code>'citymapper'</code>   |
+| **`UBER`**         | <code>'uber'</code>         |
+| **`YANDEX`**       | <code>'yandex'</code>       |
+| **`SYGIC`**        | <code>'sygic'</code>        |
+| **`HERE_MAPS`**    | <code>'here'</code>         |
+| **`MOOVIT`**       | <code>'moovit'</code>       |
+| **`LYFT`**         | <code>'lyft'</code>         |
+| **`MAPS_ME`**      | <code>'mapsme'</code>       |
+| **`TOMTOM`**       | <code>'tomtom'</code>       |
+| **`GURU_MAPS`**    | <code>'guru_maps'</code>    |
+| **`ORGANIC_MAPS`** | <code>'organic_maps'</code> |
+| **`YANDEX_MAPS`**  | <code>'yandex_maps'</code>  |
+| **`MAPY`**         | <code>'mapy'</code>         |
+| **`TWO_GIS`**      | <code>'2gis'</code>         |
+| **`CABIFY`**       | <code>'cabify'</code>       |
+| **`BAIDU`**        | <code>'baidu'</code>        |
+| **`GAODE`**        | <code>'gaode'</code>        |
+| **`TESLA`**        | <code>'tesla'</code>        |
 
 
 #### LaunchMode

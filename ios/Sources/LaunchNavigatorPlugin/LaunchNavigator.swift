@@ -2,6 +2,7 @@ import Foundation
 import UIKit
 import MapKit
 
+// swiftlint:disable type_body_length
 @objc public class LaunchNavigator: NSObject {
 
     private let navigationApps: [String: (name: String, urlScheme: String)] = [
@@ -19,12 +20,18 @@ import MapKit
         "moovit": ("Moovit", "moovit://"),
         "lyft": ("Lyft", "lyft://"),
         "mapsme": ("MAPS.ME", "mapsme://"),
+        "guru_maps": ("Guru Maps", "guru://"),
+        "organic_maps": ("Organic Maps", "om://"),
+        "yandex_maps": ("Yandex Maps", "yandexmaps://"),
+        "2gis": ("2GIS", "dgis://"),
         "cabify": ("Cabify", "cabify://"),
         "baidu": ("Baidu Maps", "baidumap://"),
         "gaode": ("Gaode Maps", "iosamap://"),
+        "tesla": ("Tesla", "tesla://"),
         "99taxi": ("99 Taxi", "99app://")
     ]
 
+    // swiftlint:disable:next cyclomatic_complexity function_body_length function_parameter_count
     public func navigate(
         app: String,
         destination: CLLocationCoordinate2D,
@@ -32,6 +39,7 @@ import MapKit
         startName: String?,
         destinationName: String?,
         transportMode: String,
+        viewController: UIViewController? = nil,
         completion: @escaping (Bool, String?) -> Void
     ) {
         switch app {
@@ -106,6 +114,34 @@ import MapKit
                 destination: destination,
                 completion: completion
             )
+        case "guru_maps":
+            launchGuruMaps(
+                destination: destination,
+                start: start,
+                transportMode: transportMode,
+                completion: completion
+            )
+        case "organic_maps":
+            launchOrganicMaps(
+                destination: destination,
+                start: start,
+                destinationName: destinationName,
+                transportMode: transportMode,
+                completion: completion
+            )
+        case "yandex_maps":
+            launchYandexMaps(
+                destination: destination,
+                start: start,
+                completion: completion
+            )
+        case "2gis":
+            launch2Gis(
+                destination: destination,
+                start: start,
+                transportMode: transportMode,
+                completion: completion
+            )
         case "cabify":
             launchCabify(
                 destination: destination,
@@ -122,6 +158,14 @@ import MapKit
             launchGaode(
                 destination: destination,
                 start: start,
+                completion: completion
+            )
+        case "tesla":
+            shareToTesla(
+                destination: destination,
+                start: start,
+                transportMode: transportMode,
+                viewController: viewController,
                 completion: completion
             )
         default:
@@ -300,6 +344,103 @@ import MapKit
         openURL(urlString, completion: completion)
     }
 
+    private func launchGuruMaps(
+        destination: CLLocationCoordinate2D,
+        start: CLLocationCoordinate2D?,
+        transportMode: String,
+        completion: @escaping (Bool, String?) -> Void
+    ) {
+        var urlString = "guru://nav?finish=\(destination.latitude),\(destination.longitude)&mode=\(guruMapsMode(transportMode))&start_navigation=true"
+
+        if let startCoord = start {
+            urlString += "&start=\(startCoord.latitude),\(startCoord.longitude)"
+        }
+
+        openURL(urlString, completion: completion)
+    }
+
+    private func guruMapsMode(_ transportMode: String) -> String {
+        switch transportMode {
+        case "walking":
+            return "pedestrian"
+        case "bicycling":
+            return "bicycle"
+        default:
+            return "auto"
+        }
+    }
+
+    private func launchOrganicMaps(
+        destination: CLLocationCoordinate2D,
+        start: CLLocationCoordinate2D?,
+        destinationName: String?,
+        transportMode: String,
+        completion: @escaping (Bool, String?) -> Void
+    ) {
+        let origin = start.map { "\($0.latitude),\($0.longitude)" } ?? "currentLocation"
+        var urlString = "om://v2/nav?origin=\(encoded(origin))&destination=\(destination.latitude),\(destination.longitude)&mode=\(organicMapsMode(transportMode))"
+
+        if let destinationName = destinationName, !destinationName.isEmpty {
+            urlString += "&destination_name=\(encoded(destinationName))"
+        }
+
+        openURL(urlString, completion: completion)
+    }
+
+    private func organicMapsMode(_ transportMode: String) -> String {
+        switch transportMode {
+        case "walking":
+            return "pedestrian"
+        case "bicycling":
+            return "bicycle"
+        case "transit":
+            return "transit"
+        default:
+            return "drive"
+        }
+    }
+
+    private func launchYandexMaps(
+        destination: CLLocationCoordinate2D,
+        start: CLLocationCoordinate2D?,
+        completion: @escaping (Bool, String?) -> Void
+    ) {
+        var urlString = "yandexmaps://build_route_on_map/?lat_to=\(destination.latitude)&lon_to=\(destination.longitude)"
+
+        if let startCoord = start {
+            urlString += "&lat_from=\(startCoord.latitude)&lon_from=\(startCoord.longitude)"
+        }
+
+        openURL(urlString, completion: completion)
+    }
+
+    private func launch2Gis(
+        destination: CLLocationCoordinate2D,
+        start: CLLocationCoordinate2D?,
+        transportMode: String,
+        completion: @escaping (Bool, String?) -> Void
+    ) {
+        var urlString = "dgis://2gis.ru/routeSearch/rsType/\(twoGisMode(transportMode))"
+
+        if let startCoord = start {
+            urlString += "/from/\(startCoord.longitude),\(startCoord.latitude)"
+        }
+
+        urlString += "/to/\(destination.longitude),\(destination.latitude)"
+        openURL(urlString, completion: completion)
+    }
+
+    private func twoGisMode(_ transportMode: String) -> String {
+        switch transportMode {
+        case "walking":
+            return "pedestrian"
+        case "transit":
+            return "ctx"
+        default:
+            return "car"
+        }
+    }
+
     private func launchCabify(
         destination: CLLocationCoordinate2D,
         start: CLLocationCoordinate2D?,
@@ -340,6 +481,69 @@ import MapKit
         }
 
         openURL(urlString, completion: completion)
+    }
+
+    private func shareToTesla(
+        destination: CLLocationCoordinate2D,
+        start: CLLocationCoordinate2D?,
+        transportMode: String,
+        viewController: UIViewController?,
+        completion: @escaping (Bool, String?) -> Void
+    ) {
+        guard let viewController = viewController else {
+            completion(false, "Unable to present share sheet")
+            return
+        }
+
+        guard let url = googleMapsWebURL(destination: destination, start: start, transportMode: transportMode) else {
+            completion(false, "Invalid Tesla share URL")
+            return
+        }
+
+        let activityViewController = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+        activityViewController.popoverPresentationController?.sourceView = viewController.view
+        activityViewController.completionWithItemsHandler = { _, completed, _, error in
+            if let error = error {
+                completion(false, error.localizedDescription)
+            } else if completed {
+                completion(true, nil)
+            } else {
+                completion(false, "Share cancelled")
+            }
+        }
+
+        viewController.present(activityViewController, animated: true)
+    }
+
+    private func googleMapsWebURL(
+        destination: CLLocationCoordinate2D,
+        start: CLLocationCoordinate2D?,
+        transportMode: String
+    ) -> URL? {
+        var urlString = "https://www.google.com/maps/dir/?api=1&destination=\(destination.latitude),\(destination.longitude)&travelmode=\(googleMapsTravelMode(transportMode))"
+
+        if let startCoord = start {
+            urlString += "&origin=\(startCoord.latitude),\(startCoord.longitude)"
+        }
+
+        return URL(string: urlString)
+    }
+
+    private func googleMapsTravelMode(_ transportMode: String) -> String {
+        switch transportMode {
+        case "walking":
+            return "walking"
+        case "bicycling":
+            return "bicycling"
+        case "transit":
+            return "transit"
+        default:
+            return "driving"
+        }
+    }
+
+    private func encoded(_ value: String) -> String {
+        value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? value
     }
 
     private func openURL(_ urlString: String, completion: @escaping (Bool, String?) -> Void) {
@@ -392,3 +596,4 @@ import MapKit
         return Array(navigationApps.keys)
     }
 }
+// swiftlint:enable type_body_length
