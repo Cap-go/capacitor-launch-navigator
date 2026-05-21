@@ -236,10 +236,14 @@ export class LaunchNavigatorWeb extends WebPlugin implements LaunchNavigatorPlug
       setObjectUrl(app, localUrl);
 
       if (cache) {
-        await cache.put(
-          cacheRequest(app),
-          new Response(blob, { headers: mimeType ? { 'content-type': mimeType } : undefined }),
-        );
+        try {
+          await cache.put(
+            cacheRequest(app),
+            new Response(blob, { headers: mimeType ? { 'content-type': mimeType } : undefined }),
+          );
+        } catch (error) {
+          console.warn('Unable to persist provider icon in Cache Storage', error);
+        }
       }
       writeMetadata(metadata);
 
@@ -355,7 +359,12 @@ async function getCache(): Promise<Cache | undefined> {
   if (!('caches' in window)) {
     return undefined;
   }
-  return caches.open(ICON_CACHE_NAME);
+  try {
+    return await caches.open(ICON_CACHE_NAME);
+  } catch (error) {
+    console.warn('Unable to open provider icon cache', error);
+    return undefined;
+  }
 }
 
 function cacheRequest(app: string): Request {
@@ -372,29 +381,47 @@ function readMetadata(app: string): StoredIconMetadata | undefined {
 }
 
 function writeMetadata(metadata: StoredIconMetadata): void {
-  localStorage.setItem(metadataKey(metadata.app), JSON.stringify(metadata));
+  try {
+    localStorage.setItem(metadataKey(metadata.app), JSON.stringify(metadata));
+  } catch (error) {
+    console.warn('Unable to persist provider icon metadata', error);
+  }
 }
 
 function getStoredAppIds(): string[] {
   const apps: string[] = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key?.startsWith(ICON_METADATA_PREFIX)) {
-      apps.push(key.slice(ICON_METADATA_PREFIX.length));
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key?.startsWith(ICON_METADATA_PREFIX)) {
+        apps.push(key.slice(ICON_METADATA_PREFIX.length));
+      }
     }
+  } catch (error) {
+    console.warn('Unable to read provider icon metadata', error);
   }
   return apps;
 }
 
 async function deleteCachedIcon(app: string, cache: Cache | undefined): Promise<boolean> {
-  const hadMetadata = localStorage.getItem(metadataKey(app)) !== null;
-  localStorage.removeItem(metadataKey(app));
+  let hadMetadata = false;
+  try {
+    hadMetadata = localStorage.getItem(metadataKey(app)) !== null;
+    localStorage.removeItem(metadataKey(app));
+  } catch (error) {
+    console.warn('Unable to clear provider icon metadata', error);
+  }
   const objectUrl = objectUrls.get(app);
   if (objectUrl) {
     URL.revokeObjectURL(objectUrl);
     objectUrls.delete(app);
   }
-  const deletedFromCache = (await cache?.delete(cacheRequest(app))) || false;
+  let deletedFromCache = false;
+  try {
+    deletedFromCache = (await cache?.delete(cacheRequest(app))) || false;
+  } catch (error) {
+    console.warn('Unable to clear provider icon cache entry', error);
+  }
   return hadMetadata || deletedFromCache;
 }
 

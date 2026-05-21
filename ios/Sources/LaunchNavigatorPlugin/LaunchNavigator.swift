@@ -551,7 +551,9 @@ struct NavigationAppInfo {
     }
 
     private func encoded(_ value: String) -> String {
-        value.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? value
+        var allowed = CharacterSet.urlQueryAllowed
+        allowed.remove(charactersIn: "&=+/?#")
+        return value.addingPercentEncoding(withAllowedCharacters: allowed) ?? value
     }
 
     private func openURL(_ urlString: String, completion: @escaping (Bool, String?) -> Void) {

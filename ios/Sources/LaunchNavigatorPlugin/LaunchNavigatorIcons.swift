@@ -58,7 +58,7 @@ extension LaunchNavigator {
 
         if let apps = options["apps"] as? [String], !apps.isEmpty {
             for app in apps {
-                cleared += deleteCachedFiles(app: app)
+                cleared += deleteCachedFiles(app: app) ? 1 : 0
             }
         } else if let files = try? FileManager.default.contentsOfDirectory(
             at: iconCacheDirectory(),
@@ -316,21 +316,22 @@ extension LaunchNavigator {
         iconCacheDirectory().appendingPathComponent(cacheKey(app) + ".json")
     }
 
-    private func deleteCachedFiles(app: String, keeping keptFileNames: Set<String> = []) -> Int {
+    @discardableResult
+    private func deleteCachedFiles(app: String, keeping keptFileNames: Set<String> = []) -> Bool {
         let prefix = cacheKey(app) + "."
         guard let files = try? FileManager.default.contentsOfDirectory(
             at: iconCacheDirectory(),
             includingPropertiesForKeys: nil
         ) else {
-            return 0
+            return false
         }
 
-        var deleted = 0
+        var deleted = false
         for file in files
         where file.lastPathComponent.hasPrefix(prefix) &&
             !keptFileNames.contains(file.lastPathComponent) &&
             deleteFileIfExists(file) {
-            deleted += 1
+            deleted = true
         }
         return deleted
     }
