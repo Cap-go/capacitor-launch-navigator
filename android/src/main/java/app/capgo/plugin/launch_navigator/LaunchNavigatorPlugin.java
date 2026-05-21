@@ -16,7 +16,7 @@ public class LaunchNavigatorPlugin extends Plugin {
 
     @Override
     public void load() {
-        implementation = new LaunchNavigator(getContext());
+        implementation = new LaunchNavigator(getContext(), getBridge());
     }
 
     @PluginMethod
@@ -102,6 +102,66 @@ public class LaunchNavigatorPlugin extends Plugin {
         JSObject ret = new JSObject();
         ret.put("app", "google_maps");
         call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void getAppIcons(PluginCall call) {
+        JSObject options = new JSObject();
+        try {
+            options = new JSObject(call.getData().toString());
+        } catch (Exception e) {
+            call.reject("Invalid icon options: " + e.getMessage());
+            return;
+        }
+
+        JSObject finalOptions = options;
+        execute(() -> {
+            try {
+                call.resolve(implementation.getAppIcons(finalOptions));
+            } catch (Exception e) {
+                call.reject("Could not get app icons: " + e.getMessage(), e);
+            }
+        });
+    }
+
+    @PluginMethod
+    public void refreshAppIcons(PluginCall call) {
+        JSObject options = new JSObject();
+        try {
+            options = new JSObject(call.getData().toString());
+        } catch (Exception e) {
+            call.reject("Invalid icon options: " + e.getMessage());
+            return;
+        }
+
+        JSObject finalOptions = options;
+        execute(() -> {
+            try {
+                call.resolve(implementation.refreshAppIcons(finalOptions));
+            } catch (Exception e) {
+                call.reject("Could not refresh app icons: " + e.getMessage(), e);
+            }
+        });
+    }
+
+    @PluginMethod
+    public void clearIconCache(PluginCall call) {
+        JSObject options = new JSObject();
+        try {
+            options = new JSObject(call.getData().toString());
+        } catch (Exception e) {
+            call.reject("Invalid icon cache options: " + e.getMessage());
+            return;
+        }
+
+        JSObject finalOptions = options;
+        execute(() -> {
+            try {
+                call.resolve(implementation.clearIconCache(finalOptions));
+            } catch (Exception e) {
+                call.reject("Could not clear icon cache: " + e.getMessage(), e);
+            }
+        });
     }
 
     @PluginMethod

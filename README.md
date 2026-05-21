@@ -52,9 +52,14 @@ Add URL schemes to your `Info.plist` to detect installed navigation apps:
     <string>moovit</string>
     <string>lyft</string>
     <string>mapsme</string>
+    <string>guru</string>
+    <string>om</string>
+    <string>yandexmaps</string>
+    <string>dgis</string>
     <string>cabify</string>
     <string>baidumap</string>
     <string>iosamap</string>
+    <string>tesla</string>
     <string>99app</string>
 </array>
 ```
@@ -82,9 +87,17 @@ The following navigation apps are declared in the plugin's manifest:
     <package android:name="com.tranzmate" />
     <package android:name="me.lyft.android" />
     <package android:name="com.mapswithme.maps.pro" />
+    <package android:name="com.tomtom.gplay.navapp" />
+    <package android:name="com.bodunov.galileo" />
+    <package android:name="com.bodunov.GalileoPro" />
+    <package android:name="app.organicmaps" />
+    <package android:name="ru.yandex.yandexmaps" />
+    <package android:name="cz.seznam.mapy" />
+    <package android:name="ru.dublgis.dgismobile" />
     <package android:name="com.cabify.rider" />
     <package android:name="com.baidu.BaiduMap" />
     <package android:name="com.autonavi.minimap" />
+    <package android:name="com.teslamotors.tesla" />
 </queries>
 ```
 
@@ -126,12 +139,32 @@ const { apps } = await LaunchNavigator.getAvailableApps();
 apps.forEach(app => {
     console.log(`${app.name} is ${app.available ? 'available' : 'not installed'}`);
 });
+
+// Fetch local provider icons for display
+const { icons, failures } = await LaunchNavigator.getAppIcons({
+    apps: ['google_maps', 'waze']
+});
+
+icons.forEach(icon => {
+    const image = document.querySelector<HTMLImageElement>(`img[data-app="${icon.app}"]`);
+    if (image) {
+        image.src = icon.localUrl; // Uses the local cache after the first fetch
+    }
+});
+
+// Force a refresh when an icon needs to be repaired
+await LaunchNavigator.refreshAppIcons({
+    apps: ['waze']
+});
+
+console.log('Icon failures:', failures);
 ```
 
 ## Important Notes
 
 - **Coordinates Only**: This plugin only accepts latitude/longitude coordinates for navigation. Address strings are not supported.
 - **Address Geocoding**: If you need to convert addresses to coordinates, use [@capgo/capacitor-nativegeocoder](https://github.com/Cap-go/capacitor-nativegeocoder).
+- **Tesla**: `app: 'tesla'` shares a Google Maps directions link to the Tesla app. Android targets the Tesla app directly; iOS opens the native share sheet because iOS does not allow selecting another app's share extension programmatically.
 
 ## Supported Navigation Apps
 
@@ -150,9 +183,14 @@ apps.forEach(app => {
 - Moovit
 - Lyft
 - MAPS.ME
+- Guru Maps
+- Organic Maps
+- Yandex Maps
+- 2GIS
 - Cabify
 - Baidu Maps
 - Gaode Maps
+- Tesla
 - 99 Taxi
 
 ### Android
@@ -166,9 +204,16 @@ apps.forEach(app => {
 - Moovit
 - Lyft
 - MAPS.ME
+- TomTom GO
+- Guru Maps
+- Organic Maps
+- Yandex Maps
+- Mapy.com
+- 2GIS
 - Cabify
 - Baidu Maps
 - Gaode Maps
+- Tesla
 
 ## API
 
@@ -179,6 +224,9 @@ apps.forEach(app => {
 * [`getAvailableApps()`](#getavailableapps)
 * [`getSupportedApps()`](#getsupportedapps)
 * [`getDefaultApp()`](#getdefaultapp)
+* [`getAppIcons(...)`](#getappicons)
+* [`refreshAppIcons(...)`](#refreshappicons)
+* [`clearIconCache(...)`](#cleariconcache)
 * [`getPluginVersion()`](#getpluginversion)
 * [Interfaces](#interfaces)
 * [Type Aliases](#type-aliases)
@@ -262,6 +310,60 @@ Get the name of the default app for navigation
 --------------------
 
 
+### getAppIcons(...)
+
+```typescript
+getAppIcons(options?: GetAppIconsOptions | undefined) => Promise<ProviderIconsResult>
+```
+
+Fetch provider icons and cache them locally.
+
+The native implementations revalidate cached icons after 24 hours by default.
+Pass `forceRefresh: true` to bypass the cache when an icon must be repaired.
+
+| Param         | Type                                                              |
+| ------------- | ----------------------------------------------------------------- |
+| **`options`** | <code><a href="#getappiconsoptions">GetAppIconsOptions</a></code> |
+
+**Returns:** <code>Promise&lt;<a href="#providericonsresult">ProviderIconsResult</a>&gt;</code>
+
+--------------------
+
+
+### refreshAppIcons(...)
+
+```typescript
+refreshAppIcons(options?: GetAppIconsOptions | undefined) => Promise<ProviderIconsResult>
+```
+
+Refresh provider icons, ignoring the cache age.
+
+| Param         | Type                                                              |
+| ------------- | ----------------------------------------------------------------- |
+| **`options`** | <code><a href="#getappiconsoptions">GetAppIconsOptions</a></code> |
+
+**Returns:** <code>Promise&lt;<a href="#providericonsresult">ProviderIconsResult</a>&gt;</code>
+
+--------------------
+
+
+### clearIconCache(...)
+
+```typescript
+clearIconCache(options?: ClearIconCacheOptions | undefined) => Promise<{ cleared: number; }>
+```
+
+Clear cached provider icons.
+
+| Param         | Type                                                                    |
+| ------------- | ----------------------------------------------------------------------- |
+| **`options`** | <code><a href="#cleariconcacheoptions">ClearIconCacheOptions</a></code> |
+
+**Returns:** <code>Promise&lt;{ cleared: number; }&gt;</code>
+
+--------------------
+
+
 ### getPluginVersion()
 
 ```typescript
@@ -305,6 +407,77 @@ Result of checking app availability
 | **`available`** | <code>boolean</code> | Whether the app is available on the device |
 
 
+#### ProviderIconsResult
+
+Result of fetching provider icons.
+
+| Prop           | Type                               | Description                                                    |
+| -------------- | ---------------------------------- | -------------------------------------------------------------- |
+| **`icons`**    | <code>ProviderIcon[]</code>        | Icons available from cache or freshly downloaded               |
+| **`failures`** | <code>ProviderIconFailure[]</code> | Providers that could not be fetched and had no cached fallback |
+
+
+#### ProviderIcon
+
+Cached icon for a navigation provider.
+
+| Prop            | Type                 | Description                                                           |
+| --------------- | -------------------- | --------------------------------------------------------------------- |
+| **`app`**       | <code>string</code>  | Navigation app identifier                                             |
+| **`name`**      | <code>string</code>  | Display name for the provider                                         |
+| **`localUrl`**  | <code>string</code>  | URL that can be used directly in an image element inside the WebView. |
+| **`sourceUrl`** | <code>string</code>  | Web URL used to download the cached image                             |
+| **`mimeType`**  | <code>string</code>  | MIME type reported for the cached image, when known                   |
+| **`fetchedAt`** | <code>number</code>  | Unix timestamp in milliseconds when the icon was last fetched         |
+| **`fromCache`** | <code>boolean</code> | Whether the icon came from the local cache without a network refresh  |
+| **`stale`**     | <code>boolean</code> | Whether a stale cached icon was returned because refresh failed       |
+
+
+#### ProviderIconFailure
+
+Icon fetch failure for a provider.
+
+| Prop            | Type                | Description                     |
+| --------------- | ------------------- | ------------------------------- |
+| **`app`**       | <code>string</code> | Navigation app identifier       |
+| **`name`**      | <code>string</code> | Display name for the provider   |
+| **`sourceUrl`** | <code>string</code> | Web URL that failed, when known |
+| **`message`**   | <code>string</code> | Failure message                 |
+
+
+#### GetAppIconsOptions
+
+Options for fetching navigation provider icons.
+
+| Prop               | Type                        | Description                                                                            |
+| ------------------ | --------------------------- | -------------------------------------------------------------------------------------- |
+| **`apps`**         | <code>string[]</code>       | App identifiers to fetch. Defaults to all built-in providers for the current platform. |
+| **`providers`**    | <code>IconProvider[]</code> | Provider definitions to fetch or override built-in provider websites.                  |
+| **`maxAgeMs`**     | <code>number</code>         | Cache revalidation interval in milliseconds. Defaults to 24 hours.                     |
+| **`forceRefresh`** | <code>boolean</code>        | Ignore the current cache and fetch icons again.                                        |
+
+
+#### IconProvider
+
+Web source used to discover or download a provider icon.
+
+| Prop          | Type                | Description                                                                                                 |
+| ------------- | ------------------- | ----------------------------------------------------------------------------------------------------------- |
+| **`app`**     | <code>string</code> | Navigation app identifier                                                                                   |
+| **`name`**    | <code>string</code> | Display name for the provider                                                                               |
+| **`url`**     | <code>string</code> | Provider website used to discover favicon metadata                                                          |
+| **`iconUrl`** | <code>string</code> | Direct image URL. When provided, the plugin downloads this URL instead of discovering a favicon from `url`. |
+
+
+#### ClearIconCacheOptions
+
+Options for clearing cached provider icons.
+
+| Prop       | Type                  | Description                                             |
+| ---------- | --------------------- | ------------------------------------------------------- |
+| **`apps`** | <code>string[]</code> | App identifiers to clear. Defaults to all cached icons. |
+
+
 ### Type Aliases
 
 
@@ -346,29 +519,41 @@ Construct a type with a set of properties K of type T
 | **`MOOVIT`**           | <code>'moovit'</code>         |
 | **`LYFT`**             | <code>'lyft'</code>           |
 | **`MAPS_ME`**          | <code>'mapsme'</code>         |
+| **`GURU_MAPS`**        | <code>'guru_maps'</code>      |
+| **`ORGANIC_MAPS`**     | <code>'organic_maps'</code>   |
+| **`YANDEX_MAPS`**      | <code>'yandex_maps'</code>    |
+| **`TWO_GIS`**          | <code>'2gis'</code>           |
 | **`CABIFY`**           | <code>'cabify'</code>         |
 | **`BAIDU`**            | <code>'baidu'</code>          |
 | **`GAODE`**            | <code>'gaode'</code>          |
+| **`TESLA`**            | <code>'tesla'</code>          |
 | **`TAXI_99`**          | <code>'99taxi'</code>         |
 
 
 #### AndroidNavigationApp
 
-| Members           | Value                      |
-| ----------------- | -------------------------- |
-| **`GOOGLE_MAPS`** | <code>'google_maps'</code> |
-| **`WAZE`**        | <code>'waze'</code>        |
-| **`CITYMAPPER`**  | <code>'citymapper'</code>  |
-| **`UBER`**        | <code>'uber'</code>        |
-| **`YANDEX`**      | <code>'yandex'</code>      |
-| **`SYGIC`**       | <code>'sygic'</code>       |
-| **`HERE_MAPS`**   | <code>'here'</code>        |
-| **`MOOVIT`**      | <code>'moovit'</code>      |
-| **`LYFT`**        | <code>'lyft'</code>        |
-| **`MAPS_ME`**     | <code>'mapsme'</code>      |
-| **`CABIFY`**      | <code>'cabify'</code>      |
-| **`BAIDU`**       | <code>'baidu'</code>       |
-| **`GAODE`**       | <code>'gaode'</code>       |
+| Members            | Value                       |
+| ------------------ | --------------------------- |
+| **`GOOGLE_MAPS`**  | <code>'google_maps'</code>  |
+| **`WAZE`**         | <code>'waze'</code>         |
+| **`CITYMAPPER`**   | <code>'citymapper'</code>   |
+| **`UBER`**         | <code>'uber'</code>         |
+| **`YANDEX`**       | <code>'yandex'</code>       |
+| **`SYGIC`**        | <code>'sygic'</code>        |
+| **`HERE_MAPS`**    | <code>'here'</code>         |
+| **`MOOVIT`**       | <code>'moovit'</code>       |
+| **`LYFT`**         | <code>'lyft'</code>         |
+| **`MAPS_ME`**      | <code>'mapsme'</code>       |
+| **`TOMTOM`**       | <code>'tomtom'</code>       |
+| **`GURU_MAPS`**    | <code>'guru_maps'</code>    |
+| **`ORGANIC_MAPS`** | <code>'organic_maps'</code> |
+| **`YANDEX_MAPS`**  | <code>'yandex_maps'</code>  |
+| **`MAPY`**         | <code>'mapy'</code>         |
+| **`TWO_GIS`**      | <code>'2gis'</code>         |
+| **`CABIFY`**       | <code>'cabify'</code>       |
+| **`BAIDU`**        | <code>'baidu'</code>        |
+| **`GAODE`**        | <code>'gaode'</code>        |
+| **`TESLA`**        | <code>'tesla'</code>        |
 
 
 #### LaunchMode
