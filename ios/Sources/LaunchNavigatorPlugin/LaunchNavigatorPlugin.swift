@@ -18,9 +18,22 @@ public class LaunchNavigatorPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "getAvailableApps", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "getSupportedApps", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "getDefaultApp", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "getAppIcons", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "refreshAppIcons", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "clearIconCache", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "getPluginVersion", returnType: CAPPluginReturnPromise)
     ]
     private let implementation = LaunchNavigator()
+
+    override public func load() {
+        super.load()
+        implementation.webPathResolver = { [weak self] localURL in
+            guard let portable = self?.bridge?.portablePath(fromLocalURL: localURL) else {
+                return nil
+            }
+            return portable.absoluteString
+        }
+    }
 
     @objc func navigate(_ call: CAPPluginCall) {
         guard let destination = call.getArray("destination") as? [Double],
@@ -51,7 +64,8 @@ public class LaunchNavigatorPlugin: CAPPlugin, CAPBridgedPlugin {
                 start: start,
                 startName: startName,
                 destinationName: destinationName,
-                transportMode: transportMode
+                transportMode: transportMode,
+                viewController: self.bridge?.viewController
             ) { success, error in
                 if success {
                     call.resolve()
@@ -92,6 +106,36 @@ public class LaunchNavigatorPlugin: CAPPlugin, CAPBridgedPlugin {
         call.resolve([
             "app": "apple_maps"
         ])
+    }
+
+    @objc func getAppIcons(_ call: CAPPluginCall) {
+        let options = call.options as? [String: Any] ?? [:]
+        DispatchQueue.global(qos: .utility).async {
+            let result = self.implementation.getAppIcons(options: options, forceRefresh: false)
+            DispatchQueue.main.async {
+                call.resolve(result)
+            }
+        }
+    }
+
+    @objc func refreshAppIcons(_ call: CAPPluginCall) {
+        let options = call.options as? [String: Any] ?? [:]
+        DispatchQueue.global(qos: .utility).async {
+            let result = self.implementation.getAppIcons(options: options, forceRefresh: true)
+            DispatchQueue.main.async {
+                call.resolve(result)
+            }
+        }
+    }
+
+    @objc func clearIconCache(_ call: CAPPluginCall) {
+        let options = call.options as? [String: Any] ?? [:]
+        DispatchQueue.global(qos: .utility).async {
+            let result = self.implementation.clearIconCache(options: options)
+            DispatchQueue.main.async {
+                call.resolve(result)
+            }
+        }
     }
 
     @objc func getPluginVersion(_ call: CAPPluginCall) {

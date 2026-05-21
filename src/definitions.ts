@@ -16,9 +16,14 @@ export enum IOSNavigationApp {
   MOOVIT = 'moovit',
   LYFT = 'lyft',
   MAPS_ME = 'mapsme',
+  GURU_MAPS = 'guru_maps',
+  ORGANIC_MAPS = 'organic_maps',
+  YANDEX_MAPS = 'yandex_maps',
+  TWO_GIS = '2gis',
   CABIFY = 'cabify',
   BAIDU = 'baidu',
   GAODE = 'gaode',
+  TESLA = 'tesla',
   TAXI_99 = '99taxi',
 }
 
@@ -36,9 +41,16 @@ export enum AndroidNavigationApp {
   MOOVIT = 'moovit',
   LYFT = 'lyft',
   MAPS_ME = 'mapsme',
+  TOMTOM = 'tomtom',
+  GURU_MAPS = 'guru_maps',
+  ORGANIC_MAPS = 'organic_maps',
+  YANDEX_MAPS = 'yandex_maps',
+  MAPY = 'mapy',
+  TWO_GIS = '2gis',
   CABIFY = 'cabify',
   BAIDU = 'baidu',
   GAODE = 'gaode',
+  TESLA = 'tesla',
 }
 
 /**
@@ -126,6 +138,151 @@ export interface AvailableApp {
 }
 
 /**
+ * Web source used to discover or download a provider icon.
+ */
+export interface IconProvider {
+  /**
+   * Navigation app identifier
+   */
+  app: IOSNavigationApp | AndroidNavigationApp | string;
+
+  /**
+   * Display name for the provider
+   */
+  name?: string;
+
+  /**
+   * Provider website used to discover favicon metadata
+   */
+  url?: string;
+
+  /**
+   * Direct image URL. When provided, the plugin downloads this URL instead of discovering a favicon from `url`.
+   */
+  iconUrl?: string;
+}
+
+/**
+ * Options for fetching navigation provider icons.
+ */
+export interface GetAppIconsOptions {
+  /**
+   * App identifiers to fetch. Defaults to all built-in providers for the current platform.
+   */
+  apps?: (IOSNavigationApp | AndroidNavigationApp | string)[];
+
+  /**
+   * Provider definitions to fetch or override built-in provider websites.
+   */
+  providers?: IconProvider[];
+
+  /**
+   * Cache revalidation interval in milliseconds. Defaults to 24 hours.
+   */
+  maxAgeMs?: number;
+
+  /**
+   * Ignore the current cache and fetch icons again.
+   */
+  forceRefresh?: boolean;
+}
+
+/**
+ * Cached icon for a navigation provider.
+ */
+export interface ProviderIcon {
+  /**
+   * Navigation app identifier
+   */
+  app: string;
+
+  /**
+   * Display name for the provider
+   */
+  name?: string;
+
+  /**
+   * URL that can be used directly in an image element inside the WebView.
+   */
+  localUrl: string;
+
+  /**
+   * Web URL used to download the cached image
+   */
+  sourceUrl: string;
+
+  /**
+   * MIME type reported for the cached image, when known
+   */
+  mimeType?: string;
+
+  /**
+   * Unix timestamp in milliseconds when the icon was last fetched
+   */
+  fetchedAt: number;
+
+  /**
+   * Whether the icon came from the local cache without a network refresh
+   */
+  fromCache: boolean;
+
+  /**
+   * Whether a stale cached icon was returned because refresh failed
+   */
+  stale: boolean;
+}
+
+/**
+ * Icon fetch failure for a provider.
+ */
+export interface ProviderIconFailure {
+  /**
+   * Navigation app identifier
+   */
+  app: string;
+
+  /**
+   * Display name for the provider
+   */
+  name?: string;
+
+  /**
+   * Web URL that failed, when known
+   */
+  sourceUrl?: string;
+
+  /**
+   * Failure message
+   */
+  message: string;
+}
+
+/**
+ * Result of fetching provider icons.
+ */
+export interface ProviderIconsResult {
+  /**
+   * Icons available from cache or freshly downloaded
+   */
+  icons: ProviderIcon[];
+
+  /**
+   * Providers that could not be fetched and had no cached fallback
+   */
+  failures: ProviderIconFailure[];
+}
+
+/**
+ * Options for clearing cached provider icons.
+ */
+export interface ClearIconCacheOptions {
+  /**
+   * App identifiers to clear. Defaults to all cached icons.
+   */
+  apps?: (IOSNavigationApp | AndroidNavigationApp | string)[];
+}
+
+/**
  * Main plugin interface
  */
 export interface LaunchNavigatorPlugin {
@@ -189,6 +346,29 @@ export interface LaunchNavigatorPlugin {
      * Default app identifier
      */
     app: string;
+  }>;
+
+  /**
+   * Fetch provider icons and cache them locally.
+   *
+   * The native implementations revalidate cached icons after 24 hours by default.
+   * Pass `forceRefresh: true` to bypass the cache when an icon must be repaired.
+   */
+  getAppIcons(options?: GetAppIconsOptions): Promise<ProviderIconsResult>;
+
+  /**
+   * Refresh provider icons, ignoring the cache age.
+   */
+  refreshAppIcons(options?: GetAppIconsOptions): Promise<ProviderIconsResult>;
+
+  /**
+   * Clear cached provider icons.
+   */
+  clearIconCache(options?: ClearIconCacheOptions): Promise<{
+    /**
+     * Number of cached icon files removed
+     */
+    cleared: number;
   }>;
 
   /**

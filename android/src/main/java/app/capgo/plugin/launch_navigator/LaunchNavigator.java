@@ -4,48 +4,127 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import com.getcapacitor.Bridge;
+import com.getcapacitor.FileUtils;
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
-import java.util.HashMap;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class LaunchNavigator {
 
-    private Context context;
+    private static final long DEFAULT_ICON_CACHE_MAX_AGE_MS = 24L * 60L * 60L * 1000L;
+    private static final int CONNECT_TIMEOUT_MS = 8000;
+    private static final int READ_TIMEOUT_MS = 8000;
+    private static final int MAX_ICON_BYTES = 2 * 1024 * 1024;
+    private static final int MAX_HTML_BYTES = 512 * 1024;
+    private static final String ICON_CACHE_DIR = "launch_navigator_icons";
+    private static final Pattern ICON_LINK_PATTERN = Pattern.compile(
+        "<link\\s+[^>]*rel=[\"'][^\"']*(?:apple-touch-icon|icon)[^\"']*[\"'][^>]*>",
+        Pattern.CASE_INSENSITIVE
+    );
+    private static final Pattern HREF_PATTERN = Pattern.compile("\\shref=[\"']([^\"']+)[\"']", Pattern.CASE_INSENSITIVE);
+
+    private final Context context;
+    private final Bridge bridge;
     private Map<String, AppInfo> navigationApps;
 
     private static class AppInfo {
 
         String name;
-        String packageName;
+        String[] packageNames;
+        String url;
 
-        AppInfo(String name, String packageName) {
+        AppInfo(String name, String url, String... packageNames) {
             this.name = name;
-            this.packageName = packageName;
+            this.url = url;
+            this.packageNames = packageNames;
         }
     }
 
-    public LaunchNavigator(Context context) {
+    private static class IconProvider {
+
+        String app;
+        String name;
+        String url;
+        String iconUrl;
+
+        IconProvider(String app, String name, String url, String iconUrl) {
+            this.app = app;
+            this.name = name;
+            this.url = url;
+            this.iconUrl = iconUrl;
+        }
+    }
+
+    private static class CachedIcon {
+
+        File file;
+        JSONObject metadata;
+
+        CachedIcon(File file, JSONObject metadata) {
+            this.file = file;
+            this.metadata = metadata;
+        }
+    }
+
+    private static class DownloadedIcon {
+
+        byte[] data;
+        String sourceUrl;
+        String mimeType;
+
+        DownloadedIcon(byte[] data, String sourceUrl, String mimeType) {
+            this.data = data;
+            this.sourceUrl = sourceUrl;
+            this.mimeType = mimeType;
+        }
+    }
+
+    public LaunchNavigator(Context context, Bridge bridge) {
         this.context = context;
+        this.bridge = bridge;
         initializeApps();
     }
 
     private void initializeApps() {
-        navigationApps = new HashMap<>();
-        navigationApps.put("google_maps", new AppInfo("Google Maps", "com.google.android.apps.maps"));
-        navigationApps.put("waze", new AppInfo("Waze", "com.waze"));
-        navigationApps.put("citymapper", new AppInfo("Citymapper", "com.citymapper.app.release"));
-        navigationApps.put("uber", new AppInfo("Uber", "com.ubercab"));
-        navigationApps.put("yandex", new AppInfo("Yandex Navigator", "ru.yandex.yandexnavi"));
-        navigationApps.put("sygic", new AppInfo("Sygic", "com.sygic.aura"));
-        navigationApps.put("here", new AppInfo("HERE Maps", "com.here.app.maps"));
-        navigationApps.put("moovit", new AppInfo("Moovit", "com.tranzmate"));
-        navigationApps.put("lyft", new AppInfo("Lyft", "me.lyft.android"));
-        navigationApps.put("mapsme", new AppInfo("MAPS.ME", "com.mapswithme.maps.pro"));
-        navigationApps.put("cabify", new AppInfo("Cabify", "com.cabify.rider"));
-        navigationApps.put("baidu", new AppInfo("Baidu Maps", "com.baidu.BaiduMap"));
-        navigationApps.put("gaode", new AppInfo("Gaode Maps", "com.autonavi.minimap"));
+        navigationApps = new LinkedHashMap<>();
+        navigationApps.put("google_maps", new AppInfo("Google Maps", "https://www.google.com/maps", "com.google.android.apps.maps"));
+        navigationApps.put("waze", new AppInfo("Waze", "https://www.waze.com", "com.waze"));
+        navigationApps.put("citymapper", new AppInfo("Citymapper", "https://citymapper.com", "com.citymapper.app.release"));
+        navigationApps.put("uber", new AppInfo("Uber", "https://www.uber.com", "com.ubercab"));
+        navigationApps.put("yandex", new AppInfo("Yandex Navigator", "https://yandex.com/maps", "ru.yandex.yandexnavi"));
+        navigationApps.put("sygic", new AppInfo("Sygic", "https://www.sygic.com/gps-navigation", "com.sygic.aura"));
+        navigationApps.put("here", new AppInfo("HERE Maps", "https://wego.here.com", "com.here.app.maps"));
+        navigationApps.put("moovit", new AppInfo("Moovit", "https://moovitapp.com", "com.tranzmate"));
+        navigationApps.put("lyft", new AppInfo("Lyft", "https://www.lyft.com", "me.lyft.android"));
+        navigationApps.put("mapsme", new AppInfo("MAPS.ME", "https://maps.me", "com.mapswithme.maps.pro"));
+        navigationApps.put("tomtom", new AppInfo("TomTom GO", "https://www.tomtom.com", "com.tomtom.gplay.navapp"));
+        navigationApps.put("guru_maps", new AppInfo("Guru Maps", "https://gurumaps.app", "com.bodunov.galileo", "com.bodunov.GalileoPro"));
+        navigationApps.put("organic_maps", new AppInfo("Organic Maps", "https://organicmaps.app", "app.organicmaps"));
+        navigationApps.put("yandex_maps", new AppInfo("Yandex Maps", "https://yandex.com/maps", "ru.yandex.yandexmaps"));
+        navigationApps.put("mapy", new AppInfo("Mapy.com", "https://mapy.com", "cz.seznam.mapy"));
+        navigationApps.put("2gis", new AppInfo("2GIS", "https://2gis.com", "ru.dublgis.dgismobile"));
+        navigationApps.put("cabify", new AppInfo("Cabify", "https://cabify.com", "com.cabify.rider"));
+        navigationApps.put("baidu", new AppInfo("Baidu Maps", "https://map.baidu.com", "com.baidu.BaiduMap"));
+        navigationApps.put("gaode", new AppInfo("Gaode Maps", "https://www.amap.com", "com.autonavi.minimap"));
+        navigationApps.put("tesla", new AppInfo("Tesla", "https://www.tesla.com", "com.teslamotors.tesla"));
     }
 
     public boolean navigate(
@@ -92,6 +171,24 @@ public class LaunchNavigator {
                 case "mapsme":
                     intent = createMapsMeIntent(lat, lon);
                     break;
+                case "tomtom":
+                    intent = createTomTomIntent(lat, lon);
+                    break;
+                case "guru_maps":
+                    intent = createGuruMapsIntent(lat, lon, startLat, startLon, transportMode);
+                    break;
+                case "organic_maps":
+                    intent = createOrganicMapsIntent(lat, lon, startLat, startLon, destinationName, transportMode);
+                    break;
+                case "yandex_maps":
+                    intent = createYandexMapsIntent(lat, lon, startLat, startLon);
+                    break;
+                case "mapy":
+                    intent = createMapyIntent(lat, lon, transportMode);
+                    break;
+                case "2gis":
+                    intent = create2GisIntent(lat, lon, startLat, startLon, transportMode);
+                    break;
                 case "cabify":
                     intent = createCabifyIntent(lat, lon, startLat, startLon);
                     break;
@@ -100,6 +197,9 @@ public class LaunchNavigator {
                     break;
                 case "gaode":
                     intent = createGaodeIntent(lat, lon, startLat, startLon);
+                    break;
+                case "tesla":
+                    intent = createTeslaIntent(lat, lon, startLat, startLon, transportMode);
                     break;
                 default:
                     return false;
@@ -230,6 +330,129 @@ public class LaunchNavigator {
         return new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
     }
 
+    private Intent createTomTomIntent(double lat, double lon) {
+        String uri = String.format(Locale.US, "tomtomgo://x-callback-url/navigate?destination=%f,%f", lat, lon);
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
+        intent.setPackage("com.tomtom.gplay.navapp");
+        return intent;
+    }
+
+    private Intent createGuruMapsIntent(double lat, double lon, Double startLat, Double startLon, String transportMode) {
+        String uri = String.format(
+            Locale.US,
+            "guru://nav?finish=%f,%f&mode=%s&start_navigation=true",
+            lat,
+            lon,
+            getGuruMapsMode(transportMode)
+        );
+        if (startLat != null && startLon != null) {
+            uri += String.format(Locale.US, "&start=%f,%f", startLat, startLon);
+        }
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
+        String packageName = getFirstInstalledPackage("guru_maps");
+        if (packageName != null) {
+            intent.setPackage(packageName);
+        }
+        return intent;
+    }
+
+    private String getGuruMapsMode(String transportMode) {
+        switch (transportMode) {
+            case "walking":
+                return "pedestrian";
+            case "bicycling":
+                return "bicycle";
+            case "driving":
+            case "transit":
+            default:
+                return "auto";
+        }
+    }
+
+    private Intent createOrganicMapsIntent(
+        double lat,
+        double lon,
+        Double startLat,
+        Double startLon,
+        String destinationName,
+        String transportMode
+    ) {
+        String origin = "currentLocation";
+        if (startLat != null && startLon != null) {
+            origin = String.format(Locale.US, "%f,%f", startLat, startLon);
+        }
+
+        String uri = String.format(
+            Locale.US,
+            "om://v2/nav?origin=%s&destination=%f,%f&mode=%s",
+            Uri.encode(origin),
+            lat,
+            lon,
+            getOrganicMapsMode(transportMode)
+        );
+        if (destinationName != null && !destinationName.isEmpty()) {
+            uri += "&destination_name=" + Uri.encode(destinationName);
+        }
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
+        intent.setPackage("app.organicmaps");
+        return intent;
+    }
+
+    private String getOrganicMapsMode(String transportMode) {
+        switch (transportMode) {
+            case "walking":
+                return "pedestrian";
+            case "bicycling":
+                return "bicycle";
+            case "transit":
+                return "transit";
+            case "driving":
+            default:
+                return "drive";
+        }
+    }
+
+    private Intent createYandexMapsIntent(double lat, double lon, Double startLat, Double startLon) {
+        String uri = String.format(Locale.US, "yandexmaps://build_route_on_map/?lat_to=%f&lon_to=%f", lat, lon);
+        if (startLat != null && startLon != null) {
+            uri += String.format(Locale.US, "&lat_from=%f&lon_from=%f", startLat, startLon);
+        }
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
+        intent.setPackage("ru.yandex.yandexmaps");
+        return intent;
+    }
+
+    private Intent createMapyIntent(double lat, double lon, String transportMode) {
+        String uri = String.format(Locale.US, "google.navigation:q=%f,%f&mode=%s", lat, lon, getGoogleMapsMode(transportMode));
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
+        intent.setPackage("cz.seznam.mapy");
+        return intent;
+    }
+
+    private Intent create2GisIntent(double lat, double lon, Double startLat, Double startLon, String transportMode) {
+        String uri = String.format(Locale.US, "dgis://2gis.ru/routeSearch/rsType/%s", get2GisMode(transportMode));
+        if (startLat != null && startLon != null) {
+            uri += String.format(Locale.US, "/from/%f,%f", startLon, startLat);
+        }
+        uri += String.format(Locale.US, "/to/%f,%f", lon, lat);
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
+        intent.setPackage("ru.dublgis.dgismobile");
+        return intent;
+    }
+
+    private String get2GisMode(String transportMode) {
+        switch (transportMode) {
+            case "walking":
+                return "pedestrian";
+            case "transit":
+                return "ctx";
+            case "driving":
+            case "bicycling":
+            default:
+                return "car";
+        }
+    }
+
     private Intent createCabifyIntent(double lat, double lon, Double startLat, Double startLon) {
         String uri;
         if (startLat != null && startLon != null) {
@@ -267,18 +490,493 @@ public class LaunchNavigator {
         return intent;
     }
 
+    private Intent createTeslaIntent(double lat, double lon, Double startLat, Double startLon, String transportMode) {
+        Intent intent = new Intent(Intent.ACTION_SEND);
+        intent.setType("text/plain");
+        intent.putExtra(Intent.EXTRA_TEXT, createGoogleMapsWebUrl(lat, lon, startLat, startLon, transportMode));
+        intent.setPackage("com.teslamotors.tesla");
+        return intent;
+    }
+
+    private String createGoogleMapsWebUrl(double lat, double lon, Double startLat, Double startLon, String transportMode) {
+        String url = String.format(
+            Locale.US,
+            "https://www.google.com/maps/dir/?api=1&destination=%f,%f&travelmode=%s",
+            lat,
+            lon,
+            getGoogleMapsTravelMode(transportMode)
+        );
+        if (startLat != null && startLon != null) {
+            url += String.format(Locale.US, "&origin=%f,%f", startLat, startLon);
+        }
+        return url;
+    }
+
+    private String getGoogleMapsTravelMode(String transportMode) {
+        switch (transportMode) {
+            case "walking":
+                return "walking";
+            case "bicycling":
+                return "bicycling";
+            case "transit":
+                return "transit";
+            case "driving":
+            default:
+                return "driving";
+        }
+    }
+
     public boolean isAppAvailable(String app) {
+        return getFirstInstalledPackage(app) != null;
+    }
+
+    private String getFirstInstalledPackage(String app) {
         AppInfo appInfo = navigationApps.get(app);
         if (appInfo == null) {
-            return false;
+            return null;
         }
 
         PackageManager pm = context.getPackageManager();
+        for (String packageName : appInfo.packageNames) {
+            try {
+                pm.getPackageInfo(packageName, PackageManager.GET_ACTIVITIES);
+                return packageName;
+            } catch (PackageManager.NameNotFoundException e) {
+                // Try the next package for apps that ship free and pro variants.
+            }
+        }
+        return null;
+    }
+
+    public JSObject getAppIcons(JSObject options) {
+        return getAppIcons(options, false);
+    }
+
+    public JSObject refreshAppIcons(JSObject options) {
+        return getAppIcons(options, true);
+    }
+
+    private JSObject getAppIcons(JSObject options, boolean forceRefreshOverride) {
+        JSObject safeOptions = options == null ? new JSObject() : options;
+        long maxAgeMs = getMaxAgeMs(safeOptions);
+        boolean forceRefresh = forceRefreshOverride || safeOptions.optBoolean("forceRefresh", false);
+        JSArray icons = new JSArray();
+        JSArray failures = new JSArray();
+
+        for (IconProvider provider : resolveIconProviders(safeOptions)) {
+            try {
+                icons.put(resolveProviderIcon(provider, maxAgeMs, forceRefresh));
+            } catch (Exception e) {
+                failures.put(createIconFailure(provider, e));
+            }
+        }
+
+        JSObject ret = new JSObject();
+        ret.put("icons", icons);
+        ret.put("failures", failures);
+        return ret;
+    }
+
+    public JSObject clearIconCache(JSObject options) {
+        JSObject safeOptions = options == null ? new JSObject() : options;
+        JSONArray apps = safeOptions.optJSONArray("apps");
+        int cleared = 0;
+
+        if (apps != null && apps.length() > 0) {
+            for (int i = 0; i < apps.length(); i++) {
+                String app = apps.optString(i, "");
+                if (!app.isEmpty()) {
+                    cleared += deleteCachedFiles(app);
+                }
+            }
+        } else {
+            File cacheDirectory = ensureIconCacheDirectory();
+            File[] files = cacheDirectory.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    if (file.isFile() && file.delete()) {
+                        cleared++;
+                    }
+                }
+            }
+        }
+
+        JSObject ret = new JSObject();
+        ret.put("cleared", cleared);
+        return ret;
+    }
+
+    private JSObject resolveProviderIcon(IconProvider provider, long maxAgeMs, boolean forceRefresh) throws Exception {
+        CachedIcon cachedIcon = readCachedIcon(provider.app);
+        long now = System.currentTimeMillis();
+
+        if (cachedIcon != null && !forceRefresh && now - cachedIcon.metadata.optLong("fetchedAt", 0) < maxAgeMs) {
+            return createIconObject(cachedIcon, true, false);
+        }
+
         try {
-            pm.getPackageInfo(appInfo.packageName, PackageManager.GET_ACTIVITIES);
-            return true;
-        } catch (PackageManager.NameNotFoundException e) {
-            return false;
+            DownloadedIcon downloadedIcon = downloadIcon(provider);
+            File iconFile = writeIcon(provider.app, downloadedIcon);
+            JSONObject metadata = new JSONObject();
+            metadata.put("app", provider.app);
+            metadata.put("name", provider.name);
+            metadata.put("sourceUrl", downloadedIcon.sourceUrl);
+            metadata.put("mimeType", downloadedIcon.mimeType);
+            metadata.put("fetchedAt", now);
+            metadata.put("fileName", iconFile.getName());
+            writeString(metadataFile(provider.app), metadata.toString());
+            return createIconObject(new CachedIcon(iconFile, metadata), false, false);
+        } catch (Exception e) {
+            if (cachedIcon != null) {
+                return createIconObject(cachedIcon, true, true);
+            }
+            throw e;
+        }
+    }
+
+    private JSObject createIconObject(CachedIcon cachedIcon, boolean fromCache, boolean stale) {
+        JSObject icon = new JSObject();
+        icon.put("app", cachedIcon.metadata.optString("app"));
+        String name = cachedIcon.metadata.optString("name", null);
+        if (name != null && !name.isEmpty()) {
+            icon.put("name", name);
+        }
+        icon.put("localUrl", portablePath(cachedIcon.file));
+        icon.put("sourceUrl", cachedIcon.metadata.optString("sourceUrl"));
+        String mimeType = cachedIcon.metadata.optString("mimeType", null);
+        if (mimeType != null && !mimeType.isEmpty()) {
+            icon.put("mimeType", mimeType);
+        }
+        icon.put("fetchedAt", cachedIcon.metadata.optLong("fetchedAt", 0));
+        icon.put("fromCache", fromCache);
+        icon.put("stale", stale);
+        return icon;
+    }
+
+    private JSObject createIconFailure(IconProvider provider, Exception error) {
+        JSObject failure = new JSObject();
+        failure.put("app", provider.app);
+        if (provider.name != null && !provider.name.isEmpty()) {
+            failure.put("name", provider.name);
+        }
+        String sourceUrl = provider.iconUrl != null ? provider.iconUrl : provider.url;
+        if (sourceUrl != null && !sourceUrl.isEmpty()) {
+            failure.put("sourceUrl", sourceUrl);
+        }
+        failure.put("message", error.getMessage() == null ? error.toString() : error.getMessage());
+        return failure;
+    }
+
+    private DownloadedIcon downloadIcon(IconProvider provider) throws IOException {
+        String sourceUrl;
+        if (provider.iconUrl != null && !provider.iconUrl.isEmpty()) {
+            sourceUrl = resolveUrl(provider.iconUrl, provider.url);
+        } else {
+            if (provider.url == null || provider.url.isEmpty()) {
+                throw new IOException("Provider url or iconUrl is required");
+            }
+            sourceUrl = discoverIconUrl(provider.url);
+        }
+
+        HttpURLConnection connection = openConnection(sourceUrl);
+        try {
+            int status = connection.getResponseCode();
+            if (status < 200 || status >= 300) {
+                throw new IOException("Icon request failed with status " + status);
+            }
+
+            String mimeType = normalizeMimeType(connection.getContentType());
+            byte[] data = readLimitedBytes(connection.getInputStream(), MAX_ICON_BYTES);
+            if (!isSupportedImageResponse(mimeType, sourceUrl)) {
+                throw new IOException("Icon response is not an image");
+            }
+            return new DownloadedIcon(data, connection.getURL().toString(), mimeType);
+        } finally {
+            connection.disconnect();
+        }
+    }
+
+    private String discoverIconUrl(String providerUrl) throws IOException {
+        HttpURLConnection connection = openConnection(providerUrl);
+        try {
+            int status = connection.getResponseCode();
+            if (status < 200 || status >= 300) {
+                throw new IOException("Provider page request failed with status " + status);
+            }
+
+            String html = new String(readLimitedBytes(connection.getInputStream(), MAX_HTML_BYTES), StandardCharsets.UTF_8);
+            Matcher linkMatcher = ICON_LINK_PATTERN.matcher(html);
+            if (linkMatcher.find()) {
+                Matcher hrefMatcher = HREF_PATTERN.matcher(linkMatcher.group());
+                if (hrefMatcher.find()) {
+                    return resolveUrl(hrefMatcher.group(1), connection.getURL().toString());
+                }
+            }
+
+            return resolveUrl("/favicon.ico", connection.getURL().toString());
+        } finally {
+            connection.disconnect();
+        }
+    }
+
+    private HttpURLConnection openConnection(String url) throws IOException {
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        connection.setConnectTimeout(CONNECT_TIMEOUT_MS);
+        connection.setReadTimeout(READ_TIMEOUT_MS);
+        connection.setInstanceFollowRedirects(true);
+        connection.setRequestProperty("User-Agent", "CapgoLaunchNavigator/8");
+        return connection;
+    }
+
+    private String resolveUrl(String url, String baseUrl) throws IOException {
+        if (baseUrl != null && !baseUrl.isEmpty()) {
+            return new URL(new URL(baseUrl), url).toString();
+        }
+        return new URL(url).toString();
+    }
+
+    private byte[] readLimitedBytes(InputStream inputStream, int maxBytes) throws IOException {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        byte[] buffer = new byte[8192];
+        int total = 0;
+        int read;
+
+        while ((read = inputStream.read(buffer)) != -1) {
+            total += read;
+            if (total > maxBytes) {
+                throw new IOException("Response is too large");
+            }
+            outputStream.write(buffer, 0, read);
+        }
+
+        return outputStream.toByteArray();
+    }
+
+    private boolean isSupportedImageResponse(String mimeType, String sourceUrl) {
+        if (mimeType == null || mimeType.isEmpty()) {
+            return hasKnownImageExtension(sourceUrl);
+        }
+        return mimeType.startsWith("image/") || (mimeType.equals("application/octet-stream") && hasKnownImageExtension(sourceUrl));
+    }
+
+    private boolean hasKnownImageExtension(String sourceUrl) {
+        String lowerUrl = sourceUrl.toLowerCase(Locale.US);
+        return (
+            lowerUrl.endsWith(".png") ||
+            lowerUrl.endsWith(".jpg") ||
+            lowerUrl.endsWith(".jpeg") ||
+            lowerUrl.endsWith(".gif") ||
+            lowerUrl.endsWith(".webp") ||
+            lowerUrl.endsWith(".svg") ||
+            lowerUrl.endsWith(".ico")
+        );
+    }
+
+    private File writeIcon(String app, DownloadedIcon downloadedIcon) throws IOException {
+        deleteCachedFiles(app);
+        File iconFile = new File(
+            ensureIconCacheDirectory(),
+            cacheKey(app) + guessExtension(downloadedIcon.mimeType, downloadedIcon.sourceUrl)
+        );
+        try (FileOutputStream outputStream = new FileOutputStream(iconFile)) {
+            outputStream.write(downloadedIcon.data);
+        }
+        return iconFile;
+    }
+
+    private CachedIcon readCachedIcon(String app) {
+        File metadata = metadataFile(app);
+        if (!metadata.exists()) {
+            return null;
+        }
+
+        try {
+            JSONObject metadataObject = new JSONObject(readString(metadata));
+            String fileName = metadataObject.optString("fileName", "");
+            if (fileName.isEmpty()) {
+                return null;
+            }
+            File iconFile = new File(ensureIconCacheDirectory(), fileName);
+            if (!iconFile.exists()) {
+                return null;
+            }
+            return new CachedIcon(iconFile, metadataObject);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private String readString(File file) throws IOException {
+        try (FileInputStream inputStream = new FileInputStream(file)) {
+            return new String(readLimitedBytes(inputStream, MAX_HTML_BYTES), StandardCharsets.UTF_8);
+        }
+    }
+
+    private void writeString(File file, String value) throws IOException {
+        try (FileOutputStream outputStream = new FileOutputStream(file)) {
+            outputStream.write(value.getBytes(StandardCharsets.UTF_8));
+        }
+    }
+
+    private File ensureIconCacheDirectory() {
+        File directory = new File(context.getCacheDir(), ICON_CACHE_DIR);
+        if (!directory.exists()) {
+            directory.mkdirs();
+        }
+        return directory;
+    }
+
+    private File metadataFile(String app) {
+        return new File(ensureIconCacheDirectory(), cacheKey(app) + ".json");
+    }
+
+    private int deleteCachedFiles(String app) {
+        File cacheDirectory = ensureIconCacheDirectory();
+        String prefix = cacheKey(app) + ".";
+        int deleted = 0;
+        File[] files = cacheDirectory.listFiles();
+        if (files == null) {
+            return 0;
+        }
+
+        for (File file : files) {
+            if (file.isFile() && file.getName().startsWith(prefix) && file.delete()) {
+                deleted++;
+            }
+        }
+        return deleted;
+    }
+
+    private String portablePath(File file) {
+        String host = bridge == null ? null : bridge.getLocalUrl();
+        if (host == null || host.isEmpty()) {
+            return Uri.fromFile(file).toString();
+        }
+        return FileUtils.getPortablePath(context, host, Uri.fromFile(file));
+    }
+
+    private long getMaxAgeMs(JSObject options) {
+        if (!options.has("maxAgeMs")) {
+            return DEFAULT_ICON_CACHE_MAX_AGE_MS;
+        }
+
+        double maxAgeMs = options.optDouble("maxAgeMs", DEFAULT_ICON_CACHE_MAX_AGE_MS);
+        if (Double.isNaN(maxAgeMs) || maxAgeMs < 0) {
+            return DEFAULT_ICON_CACHE_MAX_AGE_MS;
+        }
+        return (long) maxAgeMs;
+    }
+
+    private IconProvider[] resolveIconProviders(JSObject options) {
+        Map<String, IconProvider> providers = new LinkedHashMap<>();
+
+        for (Map.Entry<String, AppInfo> entry : navigationApps.entrySet()) {
+            providers.put(entry.getKey(), new IconProvider(entry.getKey(), entry.getValue().name, entry.getValue().url, null));
+        }
+
+        JSONArray customProviders = options.optJSONArray("providers");
+        if (customProviders != null) {
+            for (int i = 0; i < customProviders.length(); i++) {
+                JSONObject providerObject = customProviders.optJSONObject(i);
+                if (providerObject == null) {
+                    continue;
+                }
+
+                String app = providerObject.optString("app", "");
+                if (app.isEmpty()) {
+                    continue;
+                }
+
+                IconProvider existing = providers.get(app);
+                String name = providerObject.optString("name", existing == null ? null : existing.name);
+                String url = providerObject.optString("url", existing == null ? null : existing.url);
+                String iconUrl = providerObject.optString("iconUrl", existing == null ? null : existing.iconUrl);
+                providers.put(app, new IconProvider(app, name, url, iconUrl));
+            }
+        }
+
+        JSONArray apps = options.optJSONArray("apps");
+        if (apps != null && apps.length() > 0) {
+            IconProvider[] selected = new IconProvider[apps.length()];
+            for (int i = 0; i < apps.length(); i++) {
+                String app = apps.optString(i, "");
+                IconProvider provider = providers.get(app);
+                selected[i] = provider == null ? new IconProvider(app, null, null, null) : provider;
+            }
+            return selected;
+        }
+
+        if (customProviders != null && customProviders.length() > 0) {
+            IconProvider[] selected = new IconProvider[customProviders.length()];
+            for (int i = 0; i < customProviders.length(); i++) {
+                JSONObject providerObject = customProviders.optJSONObject(i);
+                String app = providerObject == null ? "" : providerObject.optString("app", "");
+                IconProvider provider = providers.get(app);
+                selected[i] = provider == null ? new IconProvider(app, null, null, null) : provider;
+            }
+            return selected;
+        }
+
+        return providers.values().toArray(new IconProvider[0]);
+    }
+
+    private String normalizeMimeType(String mimeType) {
+        if (mimeType == null) {
+            return null;
+        }
+        return mimeType.split(";")[0].trim().toLowerCase(Locale.US);
+    }
+
+    private String guessExtension(String mimeType, String sourceUrl) {
+        if ("image/jpeg".equals(mimeType)) {
+            return ".jpg";
+        } else if ("image/png".equals(mimeType)) {
+            return ".png";
+        } else if ("image/gif".equals(mimeType)) {
+            return ".gif";
+        } else if ("image/webp".equals(mimeType)) {
+            return ".webp";
+        } else if ("image/svg+xml".equals(mimeType)) {
+            return ".svg";
+        } else if ("image/x-icon".equals(mimeType) || "image/vnd.microsoft.icon".equals(mimeType)) {
+            return ".ico";
+        }
+
+        String lowerUrl = sourceUrl.toLowerCase(Locale.US);
+        if (lowerUrl.endsWith(".png")) {
+            return ".png";
+        } else if (lowerUrl.endsWith(".jpg") || lowerUrl.endsWith(".jpeg")) {
+            return ".jpg";
+        } else if (lowerUrl.endsWith(".gif")) {
+            return ".gif";
+        } else if (lowerUrl.endsWith(".webp")) {
+            return ".webp";
+        } else if (lowerUrl.endsWith(".svg")) {
+            return ".svg";
+        } else if (lowerUrl.endsWith(".ico")) {
+            return ".ico";
+        }
+
+        return ".img";
+    }
+
+    private String cacheKey(String app) {
+        String safeApp = app.replaceAll("[^A-Za-z0-9._-]", "_");
+        String hash = hashed(app);
+        return safeApp + "_" + hash.substring(0, Math.min(8, hash.length()));
+    }
+
+    private String hashed(String input) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] encoded = digest.digest(input.getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+            for (byte b : encoded) {
+                sb.append(String.format(Locale.US, "%02x", b));
+            }
+            return sb.toString();
+        } catch (NoSuchAlgorithmException e) {
+            return String.valueOf(input.hashCode());
         }
     }
 

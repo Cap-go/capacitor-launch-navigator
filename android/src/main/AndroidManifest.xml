@@ -1,4 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <queries>
         <package android:name="com.google.android.apps.maps" />
         <package android:name="com.waze" />
@@ -10,8 +12,16 @@
         <package android:name="com.tranzmate" />
         <package android:name="me.lyft.android" />
         <package android:name="com.mapswithme.maps.pro" />
+        <package android:name="com.tomtom.gplay.navapp" />
+        <package android:name="com.bodunov.galileo" />
+        <package android:name="com.bodunov.GalileoPro" />
+        <package android:name="app.organicmaps" />
+        <package android:name="ru.yandex.yandexmaps" />
+        <package android:name="cz.seznam.mapy" />
+        <package android:name="ru.dublgis.dgismobile" />
         <package android:name="com.cabify.rider" />
         <package android:name="com.baidu.BaiduMap" />
         <package android:name="com.autonavi.minimap" />
+        <package android:name="com.teslamotors.tesla" />
     </queries>
 </manifest>
