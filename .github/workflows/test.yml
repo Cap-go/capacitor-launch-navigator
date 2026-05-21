@@ -13,6 +13,10 @@ jobs:
     timeout-minutes: 30
     runs-on: ubuntu-latest
     steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24.x
       - name: Check out
         uses: actions/checkout@v6
       - name: Enforce capacitor-swift-pm version
@@ -26,6 +30,10 @@ jobs:
     timeout-minutes: 30
     runs-on: ubuntu-latest
     steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24.x
       - name: Check out
         uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
@@ -42,10 +50,17 @@ jobs:
       - name: Build
         id: build_code
         run: bun run verify:android
+      - name: Verify packed package in example app (Android)
+        shell: bash
+        run: bash ./.github/scripts/verify-packed-example.sh android
   build_ios:
     timeout-minutes: 30
     runs-on: macOS-latest
     steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24.x
       - name: Check out
         uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
@@ -57,11 +72,18 @@ jobs:
       - name: Build
         id: build_code
         run: bun run verify:ios
+      - name: Verify packed package in example app (iOS)
+        shell: bash
+        run: bash ./.github/scripts/verify-packed-example.sh ios
   web:
     timeout-minutes: 30
     runs-on: ubuntu-latest
     name: 'Build code and test'
     steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24.x
       - name: Check out
         uses: actions/checkout@v6
       - uses: oven-sh/setup-bun@v2
@@ -76,6 +98,10 @@ jobs:
       - name: Build
         id: build_code
         run: bun run build
+
+      - name: Verify packed package in example app (Web)
+        shell: bash
+        run: bash ./.github/scripts/verify-packed-example.sh web
       - name: Verify
         id: verify_code
         run: bun run verify:web
