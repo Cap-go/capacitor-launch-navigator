@@ -188,7 +188,7 @@ export class LaunchNavigatorWeb extends WebPlugin implements LaunchNavigatorPlug
       return { cleared };
     }
 
-    const storedApps = getStoredAppIds();
+    const storedApps = await getStoredAppIds(cache);
     for (const app of storedApps) {
       cleared += (await deleteCachedIcon(app, cache)) ? 1 : 0;
     }
@@ -388,19 +388,52 @@ function writeMetadata(metadata: StoredIconMetadata): void {
   }
 }
 
-function getStoredAppIds(): string[] {
-  const apps: string[] = [];
+async function getStoredAppIds(cache: Cache | undefined): Promise<string[]> {
+  const apps = new Set<string>();
   try {
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (key?.startsWith(ICON_METADATA_PREFIX)) {
-        apps.push(key.slice(ICON_METADATA_PREFIX.length));
+        apps.add(key.slice(ICON_METADATA_PREFIX.length));
       }
     }
   } catch (error) {
     console.warn('Unable to read provider icon metadata', error);
   }
-  return apps;
+
+  const cachesToRead = new Map<string, Cache>();
+  if (cache) {
+    cachesToRead.set(ICON_CACHE_NAME, cache);
+  }
+
+  try {
+    if ('caches' in window) {
+      const cacheNames = await caches.keys();
+      for (const cacheName of cacheNames) {
+        if (cacheName === ICON_CACHE_NAME && !cachesToRead.has(cacheName)) {
+          cachesToRead.set(cacheName, await caches.open(cacheName));
+        }
+      }
+    }
+  } catch (error) {
+    console.warn('Unable to enumerate provider icon caches', error);
+  }
+
+  try {
+    for (const iconCache of cachesToRead.values()) {
+      const requests = await iconCache.keys();
+      for (const request of requests) {
+        const app = appFromCacheRequest(request);
+        if (app) {
+          apps.add(app);
+        }
+      }
+    }
+  } catch (error) {
+    console.warn('Unable to read provider icon cache entries', error);
+  }
+
+  return Array.from(apps);
 }
 
 async function deleteCachedIcon(app: string, cache: Cache | undefined): Promise<boolean> {
@@ -427,6 +460,21 @@ async function deleteCachedIcon(app: string, cache: Cache | undefined): Promise<
 
 function metadataKey(app: string): string {
   return `${ICON_METADATA_PREFIX}${app}`;
+}
+
+function appFromCacheRequest(request: Request): string | undefined {
+  try {
+    const url = new URL(request.url);
+    const prefix = '/launch-navigator-icons/';
+    if (url.origin !== 'https://capgo.local' || !url.pathname.startsWith(prefix)) {
+      return undefined;
+    }
+
+    const app = decodeURIComponent(url.pathname.slice(prefix.length));
+    return app || undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function setObjectUrl(app: string, url: string): void {
