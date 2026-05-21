@@ -24,6 +24,7 @@ public class LaunchNavigatorPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "getPluginVersion", returnType: CAPPluginReturnPromise)
     ]
     private let implementation = LaunchNavigator()
+    private let iconCacheQueue = DispatchQueue(label: "app.capgo.plugin.launch_navigator.icons")
 
     override public func load() {
         super.load()
@@ -110,7 +111,7 @@ public class LaunchNavigatorPlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc func getAppIcons(_ call: CAPPluginCall) {
         let options = call.options as? [String: Any] ?? [:]
-        DispatchQueue.global(qos: .utility).async {
+        iconCacheQueue.async {
             let result = self.implementation.getAppIcons(options: options, forceRefresh: false)
             DispatchQueue.main.async {
                 call.resolve(result)
@@ -120,7 +121,7 @@ public class LaunchNavigatorPlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc func refreshAppIcons(_ call: CAPPluginCall) {
         let options = call.options as? [String: Any] ?? [:]
-        DispatchQueue.global(qos: .utility).async {
+        iconCacheQueue.async {
             let result = self.implementation.getAppIcons(options: options, forceRefresh: true)
             DispatchQueue.main.async {
                 call.resolve(result)
@@ -130,7 +131,7 @@ public class LaunchNavigatorPlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc func clearIconCache(_ call: CAPPluginCall) {
         let options = call.options as? [String: Any] ?? [:]
-        DispatchQueue.global(qos: .utility).async {
+        iconCacheQueue.async {
             let result = self.implementation.clearIconCache(options: options)
             DispatchQueue.main.async {
                 call.resolve(result)

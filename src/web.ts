@@ -10,6 +10,7 @@ import type {
   ProviderIconsResult,
   IconProvider,
   ClearIconCacheOptions,
+  LaunchNavigatorPluginIcons,
 } from './definitions';
 
 const DEFAULT_ICON_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
@@ -17,31 +18,40 @@ const ICON_CACHE_NAME = 'capgo-launch-navigator-icons';
 const ICON_METADATA_PREFIX = 'capgo-launch-navigator-icon:';
 
 const BUILT_IN_ICON_PROVIDERS: IconProvider[] = [
-  { app: 'google_maps', name: 'Google Maps', url: 'https://www.google.com/maps' },
-  { app: 'waze', name: 'Waze', url: 'https://www.waze.com' },
-  { app: 'citymapper', name: 'Citymapper', url: 'https://citymapper.com' },
-  { app: 'uber', name: 'Uber', url: 'https://www.uber.com' },
-  { app: 'yandex', name: 'Yandex Navigator', url: 'https://yandex.com/maps' },
-  { app: 'sygic', name: 'Sygic', url: 'https://www.sygic.com/gps-navigation' },
-  { app: 'here', name: 'HERE Maps', url: 'https://wego.here.com' },
-  { app: 'moovit', name: 'Moovit', url: 'https://moovitapp.com' },
-  { app: 'lyft', name: 'Lyft', url: 'https://www.lyft.com' },
-  { app: 'mapsme', name: 'MAPS.ME', url: 'https://maps.me' },
-  { app: 'guru_maps', name: 'Guru Maps', url: 'https://gurumaps.app' },
-  { app: 'organic_maps', name: 'Organic Maps', url: 'https://organicmaps.app' },
-  { app: 'yandex_maps', name: 'Yandex Maps', url: 'https://yandex.com/maps' },
-  { app: 'mapy', name: 'Mapy.com', url: 'https://mapy.com' },
-  { app: '2gis', name: '2GIS', url: 'https://2gis.com' },
-  { app: 'cabify', name: 'Cabify', url: 'https://cabify.com' },
-  { app: 'baidu', name: 'Baidu Maps', url: 'https://map.baidu.com' },
-  { app: 'gaode', name: 'Gaode Maps', url: 'https://www.amap.com' },
-  { app: 'tesla', name: 'Tesla', url: 'https://www.tesla.com' },
-  { app: 'apple_maps', name: 'Apple Maps', url: 'https://www.apple.com/maps/' },
-  { app: 'tomtom', name: 'TomTom', url: 'https://www.tomtom.com' },
-  { app: 'transit_app', name: 'Transit App', url: 'https://transitapp.com' },
-  { app: 'garmin_navigon', name: 'Garmin Navigon', url: 'https://www.garmin.com' },
-  { app: '99taxi', name: '99 Taxi', url: 'https://99app.com' },
+  iconProvider('google_maps', 'Google Maps', 'https://www.google.com/maps'),
+  iconProvider('waze', 'Waze', 'https://www.waze.com'),
+  iconProvider('citymapper', 'Citymapper', 'https://citymapper.com'),
+  iconProvider('uber', 'Uber', 'https://www.uber.com'),
+  iconProvider('yandex', 'Yandex Navigator', 'https://yandex.com/maps'),
+  iconProvider('sygic', 'Sygic', 'https://www.sygic.com/gps-navigation'),
+  iconProvider('here', 'HERE Maps', 'https://wego.here.com'),
+  iconProvider('moovit', 'Moovit', 'https://moovitapp.com'),
+  iconProvider('lyft', 'Lyft', 'https://www.lyft.com'),
+  iconProvider('mapsme', 'MAPS.ME', 'https://maps.me'),
+  iconProvider('guru_maps', 'Guru Maps', 'https://gurumaps.app'),
+  iconProvider('organic_maps', 'Organic Maps', 'https://organicmaps.app'),
+  iconProvider('yandex_maps', 'Yandex Maps', 'https://yandex.com/maps'),
+  iconProvider('mapy', 'Mapy.com', 'https://mapy.com'),
+  iconProvider('2gis', '2GIS', 'https://2gis.com'),
+  iconProvider('cabify', 'Cabify', 'https://cabify.com'),
+  iconProvider('baidu', 'Baidu Maps', 'https://map.baidu.com'),
+  iconProvider('gaode', 'Gaode Maps', 'https://www.amap.com'),
+  iconProvider('tesla', 'Tesla', 'https://www.tesla.com'),
+  iconProvider('apple_maps', 'Apple Maps', 'https://www.apple.com/maps/'),
+  iconProvider('tomtom', 'TomTom', 'https://www.tomtom.com'),
+  iconProvider('transit_app', 'Transit App', 'https://transitapp.com'),
+  iconProvider('garmin_navigon', 'Garmin Navigon', 'https://www.garmin.com'),
+  iconProvider('99taxi', '99 Taxi', 'https://99app.com'),
 ];
+
+function iconProvider(app: string, name: string, url: string): IconProvider {
+  return {
+    app,
+    name,
+    url,
+    iconUrl: `https://favicone.com/${new URL(url).hostname}?s=128`,
+  };
+}
 
 interface StoredIconMetadata {
   app: string;
@@ -58,7 +68,7 @@ interface CachedWebIcon {
 
 const objectUrls = new Map<string, string>();
 
-export class LaunchNavigatorWeb extends WebPlugin implements LaunchNavigatorPlugin {
+export class LaunchNavigatorWeb extends WebPlugin implements LaunchNavigatorPlugin, LaunchNavigatorPluginIcons {
   /**
    * Navigate to a location using latitude and longitude
    * Opens the location in the default map application or Google Maps web
@@ -204,7 +214,9 @@ export class LaunchNavigatorWeb extends WebPlugin implements LaunchNavigatorPlug
     }
 
     try {
-      const sourceUrl = await discoverIconUrl(provider);
+      const sourceUrl = provider.iconUrl
+        ? absolutizeUrl(provider.iconUrl, provider.url)
+        : await discoverIconUrl(provider);
       const response = await fetch(sourceUrl);
       if (!response.ok) {
         throw new Error(`Icon request failed with status ${response.status}`);
@@ -263,11 +275,7 @@ function resolveIconProviders(options: GetAppIconsOptions): IconProvider[] {
     return options.apps.map((app) => builtIns.get(String(app)) || { app: String(app) });
   }
 
-  if (customProviders.length > 0) {
-    return customProviders.map((provider) => builtIns.get(String(provider.app)) || provider);
-  }
-
-  return [builtIns.get('google_maps') as IconProvider];
+  return Array.from(builtIns.values());
 }
 
 function normalizeMaxAge(maxAgeMs: number | undefined): number {
@@ -278,10 +286,6 @@ function normalizeMaxAge(maxAgeMs: number | undefined): number {
 }
 
 async function discoverIconUrl(provider: IconProvider): Promise<string> {
-  if (provider.iconUrl) {
-    return absolutizeUrl(provider.iconUrl, provider.url);
-  }
-
   if (!provider.url) {
     throw new Error('Provider url or iconUrl is required');
   }

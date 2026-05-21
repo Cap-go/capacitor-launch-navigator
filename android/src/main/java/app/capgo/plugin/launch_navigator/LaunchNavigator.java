@@ -22,6 +22,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.json.JSONArray;
@@ -43,6 +45,8 @@ public class LaunchNavigator {
 
     private final Context context;
     private final Bridge bridge;
+    private final Map<String, Object> iconCacheLocks = new ConcurrentHashMap<>();
+    private final ReentrantReadWriteLock iconCacheDirectoryLock = new ReentrantReadWriteLock();
     private Map<String, AppInfo> navigationApps;
 
     private static class AppInfo {
@@ -138,74 +142,9 @@ public class LaunchNavigator {
         String transportMode
     ) {
         try {
-            Intent intent;
+            Intent intent = createNavigationIntent(app, lat, lon, startLat, startLon, destinationName, transportMode);
 
-            switch (app) {
-                case "google_maps":
-                    intent = createGoogleMapsIntent(lat, lon, startLat, startLon, transportMode);
-                    break;
-                case "waze":
-                    intent = createWazeIntent(lat, lon);
-                    break;
-                case "citymapper":
-                    intent = createCitymapperIntent(lat, lon, startLat, startLon);
-                    break;
-                case "uber":
-                    intent = createUberIntent(lat, lon, startLat, startLon);
-                    break;
-                case "yandex":
-                    intent = createYandexIntent(lat, lon, startLat, startLon);
-                    break;
-                case "sygic":
-                    intent = createSygicIntent(lat, lon);
-                    break;
-                case "here":
-                    intent = createHereIntent(lat, lon, startLat, startLon);
-                    break;
-                case "moovit":
-                    intent = createMoovitIntent(lat, lon, startLat, startLon);
-                    break;
-                case "lyft":
-                    intent = createLyftIntent(lat, lon);
-                    break;
-                case "mapsme":
-                    intent = createMapsMeIntent(lat, lon);
-                    break;
-                case "tomtom":
-                    intent = createTomTomIntent(lat, lon);
-                    break;
-                case "guru_maps":
-                    intent = createGuruMapsIntent(lat, lon, startLat, startLon, transportMode);
-                    break;
-                case "organic_maps":
-                    intent = createOrganicMapsIntent(lat, lon, startLat, startLon, destinationName, transportMode);
-                    break;
-                case "yandex_maps":
-                    intent = createYandexMapsIntent(lat, lon, startLat, startLon);
-                    break;
-                case "mapy":
-                    intent = createMapyIntent(lat, lon, transportMode);
-                    break;
-                case "2gis":
-                    intent = create2GisIntent(lat, lon, startLat, startLon, transportMode);
-                    break;
-                case "cabify":
-                    intent = createCabifyIntent(lat, lon, startLat, startLon);
-                    break;
-                case "baidu":
-                    intent = createBaiduIntent(lat, lon, startLat, startLon);
-                    break;
-                case "gaode":
-                    intent = createGaodeIntent(lat, lon, startLat, startLon);
-                    break;
-                case "tesla":
-                    intent = createTeslaIntent(lat, lon, startLat, startLon, transportMode);
-                    break;
-                default:
-                    return false;
-            }
-
-            if (intent != null) {
+            if (intent != null && canResolveIntent(intent)) {
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 context.startActivity(intent);
                 return true;
@@ -215,6 +154,61 @@ public class LaunchNavigator {
         } catch (Exception e) {
             e.printStackTrace();
             return false;
+        }
+    }
+
+    private Intent createNavigationIntent(
+        String app,
+        double lat,
+        double lon,
+        Double startLat,
+        Double startLon,
+        String destinationName,
+        String transportMode
+    ) {
+        switch (app) {
+            case "google_maps":
+                return createGoogleMapsIntent(lat, lon, startLat, startLon, transportMode);
+            case "waze":
+                return createWazeIntent(lat, lon);
+            case "citymapper":
+                return createCitymapperIntent(lat, lon, startLat, startLon);
+            case "uber":
+                return createUberIntent(lat, lon, startLat, startLon);
+            case "yandex":
+                return createYandexIntent(lat, lon, startLat, startLon);
+            case "sygic":
+                return createSygicIntent(lat, lon);
+            case "here":
+                return createHereIntent(lat, lon, startLat, startLon);
+            case "moovit":
+                return createMoovitIntent(lat, lon, startLat, startLon);
+            case "lyft":
+                return createLyftIntent(lat, lon);
+            case "mapsme":
+                return createMapsMeIntent(lat, lon);
+            case "tomtom":
+                return createTomTomIntent(lat, lon);
+            case "guru_maps":
+                return createGuruMapsIntent(lat, lon, startLat, startLon, transportMode);
+            case "organic_maps":
+                return createOrganicMapsIntent(lat, lon, startLat, startLon, destinationName, transportMode);
+            case "yandex_maps":
+                return createYandexMapsIntent(lat, lon, startLat, startLon);
+            case "mapy":
+                return createMapyIntent(lat, lon, transportMode);
+            case "2gis":
+                return create2GisIntent(lat, lon, startLat, startLon, transportMode);
+            case "cabify":
+                return createCabifyIntent(lat, lon, startLat, startLon);
+            case "baidu":
+                return createBaiduIntent(lat, lon, startLat, startLon);
+            case "gaode":
+                return createGaodeIntent(lat, lon, startLat, startLon);
+            case "tesla":
+                return createTeslaIntent(lat, lon, startLat, startLon, transportMode);
+            default:
+                return null;
         }
     }
 
@@ -527,7 +521,13 @@ public class LaunchNavigator {
     }
 
     public boolean isAppAvailable(String app) {
-        return getFirstInstalledPackage(app) != null;
+        Intent intent = createNavigationIntent(app, 0, 0, null, null, null, "driving");
+        return intent != null && canResolveIntent(intent);
+    }
+
+    private boolean canResolveIntent(Intent intent) {
+        PackageManager pm = context.getPackageManager();
+        return intent.resolveActivity(pm) != null || !pm.queryIntentActivities(intent, 0).isEmpty();
     }
 
     private String getFirstInstalledPackage(String app) {
@@ -586,19 +586,11 @@ public class LaunchNavigator {
             for (int i = 0; i < apps.length(); i++) {
                 String app = apps.optString(i, "");
                 if (!app.isEmpty()) {
-                    cleared += deleteCachedFiles(app);
+                    cleared += clearIconCacheForApp(app);
                 }
             }
         } else {
-            File cacheDirectory = ensureIconCacheDirectory();
-            File[] files = cacheDirectory.listFiles();
-            if (files != null) {
-                for (File file : files) {
-                    if (file.isFile() && file.delete()) {
-                        cleared++;
-                    }
-                }
-            }
+            cleared = clearAllIconCache();
         }
 
         JSObject ret = new JSObject();
@@ -607,6 +599,17 @@ public class LaunchNavigator {
     }
 
     private JSObject resolveProviderIcon(IconProvider provider, long maxAgeMs, boolean forceRefresh) throws Exception {
+        iconCacheDirectoryLock.readLock().lock();
+        try {
+            synchronized (iconCacheLock(provider.app)) {
+                return resolveProviderIconLocked(provider, maxAgeMs, forceRefresh);
+            }
+        } finally {
+            iconCacheDirectoryLock.readLock().unlock();
+        }
+    }
+
+    private JSObject resolveProviderIconLocked(IconProvider provider, long maxAgeMs, boolean forceRefresh) throws Exception {
         CachedIcon cachedIcon = readCachedIcon(provider.app);
         long now = System.currentTimeMillis();
 
@@ -625,12 +628,44 @@ public class LaunchNavigator {
             metadata.put("fetchedAt", now);
             metadata.put("fileName", iconFile.getName());
             writeString(metadataFile(provider.app), metadata.toString());
+            deleteCachedFilesExcept(provider.app, iconFile.getName(), metadataFile(provider.app).getName());
             return createIconObject(new CachedIcon(iconFile, metadata), false, false);
         } catch (Exception e) {
             if (cachedIcon != null) {
                 return createIconObject(cachedIcon, true, true);
             }
             throw e;
+        }
+    }
+
+    private int clearIconCacheForApp(String app) {
+        iconCacheDirectoryLock.readLock().lock();
+        try {
+            synchronized (iconCacheLock(app)) {
+                return deleteCachedFiles(app);
+            }
+        } finally {
+            iconCacheDirectoryLock.readLock().unlock();
+        }
+    }
+
+    private int clearAllIconCache() {
+        iconCacheDirectoryLock.writeLock().lock();
+        try {
+            File cacheDirectory = ensureIconCacheDirectory();
+            File[] files = cacheDirectory.listFiles();
+            int cleared = 0;
+            if (files != null) {
+                for (File file : files) {
+                    if (file.isFile() && file.delete()) {
+                        cleared++;
+                    }
+                }
+            }
+            iconCacheLocks.clear();
+            return cleared;
+        } finally {
+            iconCacheDirectoryLock.writeLock().unlock();
         }
     }
 
@@ -753,33 +788,53 @@ public class LaunchNavigator {
     }
 
     private boolean isSupportedImageResponse(String mimeType, String sourceUrl) {
+        String path = pathForExtension(sourceUrl);
         if (mimeType == null || mimeType.isEmpty()) {
-            return hasKnownImageExtension(sourceUrl);
+            return hasKnownImageExtension(path);
         }
-        return mimeType.startsWith("image/") || (mimeType.equals("application/octet-stream") && hasKnownImageExtension(sourceUrl));
+        return mimeType.startsWith("image/") || (mimeType.equals("application/octet-stream") && hasKnownImageExtension(path));
     }
 
-    private boolean hasKnownImageExtension(String sourceUrl) {
-        String lowerUrl = sourceUrl.toLowerCase(Locale.US);
+    private boolean hasKnownImageExtension(String path) {
+        String lowerPath = path.toLowerCase(Locale.US);
         return (
-            lowerUrl.endsWith(".png") ||
-            lowerUrl.endsWith(".jpg") ||
-            lowerUrl.endsWith(".jpeg") ||
-            lowerUrl.endsWith(".gif") ||
-            lowerUrl.endsWith(".webp") ||
-            lowerUrl.endsWith(".svg") ||
-            lowerUrl.endsWith(".ico")
+            lowerPath.endsWith(".png") ||
+            lowerPath.endsWith(".jpg") ||
+            lowerPath.endsWith(".jpeg") ||
+            lowerPath.endsWith(".gif") ||
+            lowerPath.endsWith(".webp") ||
+            lowerPath.endsWith(".svg") ||
+            lowerPath.endsWith(".ico")
         );
     }
 
     private File writeIcon(String app, DownloadedIcon downloadedIcon) throws IOException {
-        deleteCachedFiles(app);
-        File iconFile = new File(
-            ensureIconCacheDirectory(),
-            cacheKey(app) + guessExtension(downloadedIcon.mimeType, downloadedIcon.sourceUrl)
-        );
-        try (FileOutputStream outputStream = new FileOutputStream(iconFile)) {
+        File cacheDirectory = ensureIconCacheDirectory();
+        File iconFile = new File(cacheDirectory, cacheKey(app) + guessExtension(downloadedIcon.mimeType, downloadedIcon.sourceUrl));
+        File tempFile = new File(cacheDirectory, iconFile.getName() + ".tmp");
+        File backupFile = new File(cacheDirectory, iconFile.getName() + ".bak");
+        if (tempFile.exists()) {
+            tempFile.delete();
+        }
+        if (backupFile.exists()) {
+            backupFile.delete();
+        }
+        try (FileOutputStream outputStream = new FileOutputStream(tempFile)) {
             outputStream.write(downloadedIcon.data);
+        }
+        if (iconFile.exists() && !iconFile.renameTo(backupFile)) {
+            tempFile.delete();
+            throw new IOException("Could not replace cached icon");
+        }
+        if (!tempFile.renameTo(iconFile)) {
+            tempFile.delete();
+            if (backupFile.exists()) {
+                backupFile.renameTo(iconFile);
+            }
+            throw new IOException("Could not store cached icon");
+        }
+        if (backupFile.exists()) {
+            backupFile.delete();
         }
         return iconFile;
     }
@@ -830,6 +885,10 @@ public class LaunchNavigator {
         return new File(ensureIconCacheDirectory(), cacheKey(app) + ".json");
     }
 
+    private Object iconCacheLock(String app) {
+        return iconCacheLocks.computeIfAbsent(cacheKey(app), (key) -> new Object());
+    }
+
     private int deleteCachedFiles(String app) {
         File cacheDirectory = ensureIconCacheDirectory();
         String prefix = cacheKey(app) + ".";
@@ -841,6 +900,30 @@ public class LaunchNavigator {
 
         for (File file : files) {
             if (file.isFile() && file.getName().startsWith(prefix) && file.delete()) {
+                deleted++;
+            }
+        }
+        return deleted;
+    }
+
+    private int deleteCachedFilesExcept(String app, String iconFileName, String metadataFileName) {
+        File cacheDirectory = ensureIconCacheDirectory();
+        String prefix = cacheKey(app) + ".";
+        int deleted = 0;
+        File[] files = cacheDirectory.listFiles();
+        if (files == null) {
+            return 0;
+        }
+
+        for (File file : files) {
+            String fileName = file.getName();
+            if (
+                file.isFile() &&
+                fileName.startsWith(prefix) &&
+                !fileName.equals(iconFileName) &&
+                !fileName.equals(metadataFileName) &&
+                file.delete()
+            ) {
                 deleted++;
             }
         }
@@ -906,17 +989,6 @@ public class LaunchNavigator {
             return selected;
         }
 
-        if (customProviders != null && customProviders.length() > 0) {
-            IconProvider[] selected = new IconProvider[customProviders.length()];
-            for (int i = 0; i < customProviders.length(); i++) {
-                JSONObject providerObject = customProviders.optJSONObject(i);
-                String app = providerObject == null ? "" : providerObject.optString("app", "");
-                IconProvider provider = providers.get(app);
-                selected[i] = provider == null ? new IconProvider(app, null, null, null) : provider;
-            }
-            return selected;
-        }
-
         return providers.values().toArray(new IconProvider[0]);
     }
 
@@ -942,22 +1014,39 @@ public class LaunchNavigator {
             return ".ico";
         }
 
-        String lowerUrl = sourceUrl.toLowerCase(Locale.US);
-        if (lowerUrl.endsWith(".png")) {
+        String lowerPath = pathForExtension(sourceUrl).toLowerCase(Locale.US);
+        if (lowerPath.endsWith(".png")) {
             return ".png";
-        } else if (lowerUrl.endsWith(".jpg") || lowerUrl.endsWith(".jpeg")) {
+        } else if (lowerPath.endsWith(".jpg") || lowerPath.endsWith(".jpeg")) {
             return ".jpg";
-        } else if (lowerUrl.endsWith(".gif")) {
+        } else if (lowerPath.endsWith(".gif")) {
             return ".gif";
-        } else if (lowerUrl.endsWith(".webp")) {
+        } else if (lowerPath.endsWith(".webp")) {
             return ".webp";
-        } else if (lowerUrl.endsWith(".svg")) {
+        } else if (lowerPath.endsWith(".svg")) {
             return ".svg";
-        } else if (lowerUrl.endsWith(".ico")) {
+        } else if (lowerPath.endsWith(".ico")) {
             return ".ico";
         }
 
         return ".img";
+    }
+
+    private String pathForExtension(String sourceUrl) {
+        try {
+            return new URL(sourceUrl).getPath();
+        } catch (Exception e) {
+            int queryIndex = sourceUrl.indexOf('?');
+            int fragmentIndex = sourceUrl.indexOf('#');
+            int endIndex = sourceUrl.length();
+            if (queryIndex >= 0) {
+                endIndex = Math.min(endIndex, queryIndex);
+            }
+            if (fragmentIndex >= 0) {
+                endIndex = Math.min(endIndex, fragmentIndex);
+            }
+            return sourceUrl.substring(0, endIndex);
+        }
     }
 
     private String cacheKey(String app) {

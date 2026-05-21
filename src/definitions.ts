@@ -354,6 +354,42 @@ export interface LaunchNavigatorPlugin {
    * The native implementations revalidate cached icons after 24 hours by default.
    * Pass `forceRefresh: true` to bypass the cache when an icon must be repaired.
    */
+  getAppIcons?(options?: GetAppIconsOptions): Promise<ProviderIconsResult>;
+
+  /**
+   * Refresh provider icons, ignoring the cache age.
+   */
+  refreshAppIcons?(options?: GetAppIconsOptions): Promise<ProviderIconsResult>;
+
+  /**
+   * Clear cached provider icons.
+   */
+  clearIconCache?(options?: ClearIconCacheOptions): Promise<{
+    /**
+     * Number of cached icon files removed
+     */
+    cleared: number;
+  }>;
+
+  /**
+   * Get the native Capacitor plugin version
+   *
+   * @returns {Promise<{ id: string }>} an Promise with version for this device
+   * @throws An error if the something went wrong
+   */
+  getPluginVersion(): Promise<{ version: string }>;
+}
+
+/**
+ * Required icon cache helpers exposed by the bundled plugin export.
+ */
+export interface LaunchNavigatorPluginIcons {
+  /**
+   * Fetch provider icons and cache them locally.
+   *
+   * The native implementations revalidate cached icons after 24 hours by default.
+   * Pass `forceRefresh: true` to bypass the cache when an icon must be repaired.
+   */
   getAppIcons(options?: GetAppIconsOptions): Promise<ProviderIconsResult>;
 
   /**
@@ -370,12 +406,4 @@ export interface LaunchNavigatorPlugin {
      */
     cleared: number;
   }>;
-
-  /**
-   * Get the native Capacitor plugin version
-   *
-   * @returns {Promise<{ id: string }>} an Promise with version for this device
-   * @throws An error if the something went wrong
-   */
-  getPluginVersion(): Promise<{ version: string }>;
 }

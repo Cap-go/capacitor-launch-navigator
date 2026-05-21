@@ -103,6 +103,7 @@ extension LaunchNavigator {
                 metadata["mimeType"] = mimeType
             }
             try writeMetadata(metadata, app: provider.app)
+            _ = deleteCachedFiles(app: provider.app, keeping: [iconFileURL.lastPathComponent, metadataURL(app: provider.app).lastPathComponent])
             return iconObject(cachedIcon: CachedIcon(fileURL: iconFileURL, metadata: metadata), fromCache: false, stale: false)
         } catch {
             if let cachedIcon = cachedIcon {
@@ -267,11 +268,18 @@ extension LaunchNavigator {
     }
 
     private func writeIcon(app: String, downloadedIcon: DownloadedIcon) throws -> URL {
-        _ = deleteCachedFiles(app: app)
         let fileName = cacheKey(app) + iconExtension(mimeType: downloadedIcon.mimeType, sourceUrl: downloadedIcon.sourceUrl)
-        let fileURL = iconCacheDirectory().appendingPathComponent(fileName)
-        try FileManager.default.createDirectory(at: iconCacheDirectory(), withIntermediateDirectories: true)
-        try downloadedIcon.data.write(to: fileURL, options: .atomic)
+        let directory = iconCacheDirectory()
+        let fileURL = directory.appendingPathComponent(fileName)
+        let tempURL = directory.appendingPathComponent(fileName + ".tmp")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try? FileManager.default.removeItem(at: tempURL)
+        try downloadedIcon.data.write(to: tempURL, options: .atomic)
+        if FileManager.default.fileExists(atPath: fileURL.path) {
+            _ = try FileManager.default.replaceItemAt(fileURL, withItemAt: tempURL)
+        } else {
+            try FileManager.default.moveItem(at: tempURL, to: fileURL)
+        }
         return fileURL
     }
 
@@ -308,7 +316,7 @@ extension LaunchNavigator {
         iconCacheDirectory().appendingPathComponent(cacheKey(app) + ".json")
     }
 
-    private func deleteCachedFiles(app: String) -> Int {
+    private func deleteCachedFiles(app: String, keeping keptFileNames: Set<String> = []) -> Int {
         let prefix = cacheKey(app) + "."
         guard let files = try? FileManager.default.contentsOfDirectory(
             at: iconCacheDirectory(),
@@ -318,7 +326,10 @@ extension LaunchNavigator {
         }
 
         var deleted = 0
-        for file in files where file.lastPathComponent.hasPrefix(prefix) && deleteFileIfExists(file) {
+        for file in files
+        where file.lastPathComponent.hasPrefix(prefix) &&
+            !keptFileNames.contains(file.lastPathComponent) &&
+            deleteFileIfExists(file) {
             deleted += 1
         }
         return deleted
@@ -375,16 +386,7 @@ extension LaunchNavigator {
             }
         }
 
-        if !customProviders.isEmpty {
-            return customProviders.compactMap { providerObject in
-                guard let app = providerObject["app"] as? String else {
-                    return nil
-                }
-                return providers[app]
-            }
-        }
-
-        return navigationApps.keys.compactMap { providers[$0] }
+        return providers.keys.compactMap { providers[$0] }
     }
 
     private func normalizeMimeType(_ mimeType: String?) -> String? {
