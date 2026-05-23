@@ -206,7 +206,7 @@ public class LaunchNavigator {
             case "gaode":
                 return createGaodeIntent(lat, lon, startLat, startLon);
             case "tesla":
-                return createTeslaIntent(lat, lon, startLat, startLon, transportMode);
+                return createTeslaIntent(lat, lon, destinationName);
             default:
                 return null;
         }
@@ -484,40 +484,29 @@ public class LaunchNavigator {
         return intent;
     }
 
-    private Intent createTeslaIntent(double lat, double lon, Double startLat, Double startLon, String transportMode) {
+    private Intent createTeslaIntent(double lat, double lon, String destinationName) {
         Intent intent = new Intent(Intent.ACTION_SEND);
         intent.setType("text/plain");
-        intent.putExtra(Intent.EXTRA_TEXT, createGoogleMapsWebUrl(lat, lon, startLat, startLon, transportMode));
+        intent.putExtra(Intent.EXTRA_TEXT, createTeslaShareText(lat, lon, destinationName));
         intent.setPackage("com.teslamotors.tesla");
         return intent;
     }
 
-    private String createGoogleMapsWebUrl(double lat, double lon, Double startLat, Double startLon, String transportMode) {
-        String url = String.format(
-            Locale.US,
-            "https://www.google.com/maps/dir/?api=1&destination=%f,%f&travelmode=%s",
-            lat,
-            lon,
-            getGoogleMapsTravelMode(transportMode)
-        );
-        if (startLat != null && startLon != null) {
-            url += String.format(Locale.US, "&origin=%f,%f", startLat, startLon);
-        }
-        return url;
+    static String createTeslaShareText(double lat, double lon, String destinationName) {
+        return createTeslaShareLabel(destinationName) + "\n\n" + createGoogleMapsPositionUrl(lat, lon);
     }
 
-    private String getGoogleMapsTravelMode(String transportMode) {
-        switch (transportMode) {
-            case "walking":
-                return "walking";
-            case "bicycling":
-                return "bicycling";
-            case "transit":
-                return "transit";
-            case "driving":
-            default:
-                return "driving";
+    static String createGoogleMapsPositionUrl(double lat, double lon) {
+        return String.format(Locale.US, "https://maps.google.com/?q=%.6f,%.6f", lat, lon);
+    }
+
+    private static String createTeslaShareLabel(String destinationName) {
+        if (destinationName == null) {
+            return "Dropped pin";
         }
+
+        String normalizedName = destinationName.trim().replaceAll("[\\r\\n]+", " ");
+        return normalizedName.isEmpty() ? "Dropped pin" : normalizedName;
     }
 
     public boolean isAppAvailable(String app) {

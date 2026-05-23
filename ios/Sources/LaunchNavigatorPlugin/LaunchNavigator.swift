@@ -171,8 +171,7 @@ struct NavigationAppInfo {
         case "tesla":
             shareToTesla(
                 destination: destination,
-                start: start,
-                transportMode: transportMode,
+                destinationName: destinationName,
                 viewController: viewController,
                 completion: completion
             )
@@ -493,8 +492,7 @@ struct NavigationAppInfo {
 
     private func shareToTesla(
         destination: CLLocationCoordinate2D,
-        start: CLLocationCoordinate2D?,
-        transportMode: String,
+        destinationName: String?,
         viewController: UIViewController?,
         completion: @escaping (Bool, String?) -> Void
     ) {
@@ -503,12 +501,10 @@ struct NavigationAppInfo {
             return
         }
 
-        guard let url = googleMapsWebURL(destination: destination, start: start, transportMode: transportMode) else {
-            completion(false, "Invalid Tesla share URL")
-            return
-        }
-
-        let activityViewController = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+        let activityViewController = UIActivityViewController(
+            activityItems: [teslaShareText(destination: destination, destinationName: destinationName)],
+            applicationActivities: nil
+        )
         activityViewController.popoverPresentationController?.sourceView = viewController.view
         activityViewController.completionWithItemsHandler = { _, completed, _, error in
             if let error = error {
@@ -523,31 +519,29 @@ struct NavigationAppInfo {
         viewController.present(activityViewController, animated: true)
     }
 
-    private func googleMapsWebURL(
-        destination: CLLocationCoordinate2D,
-        start: CLLocationCoordinate2D?,
-        transportMode: String
-    ) -> URL? {
-        var urlString = "https://www.google.com/maps/dir/?api=1&destination=\(destination.latitude),\(destination.longitude)&travelmode=\(googleMapsTravelMode(transportMode))"
-
-        if let startCoord = start {
-            urlString += "&origin=\(startCoord.latitude),\(startCoord.longitude)"
-        }
-
-        return URL(string: urlString)
+    func teslaShareText(destination: CLLocationCoordinate2D, destinationName: String?) -> String {
+        "\(teslaShareLabel(destinationName))\n\n\(googleMapsPositionURLString(destination: destination))"
     }
 
-    private func googleMapsTravelMode(_ transportMode: String) -> String {
-        switch transportMode {
-        case "walking":
-            return "walking"
-        case "bicycling":
-            return "bicycling"
-        case "transit":
-            return "transit"
-        default:
-            return "driving"
+    func googleMapsPositionURLString(destination: CLLocationCoordinate2D) -> String {
+        let coordinates = String(
+            format: "%.6f,%.6f",
+            locale: Locale(identifier: "en_US_POSIX"),
+            destination.latitude,
+            destination.longitude
+        )
+        return "https://maps.google.com/?q=\(coordinates)"
+    }
+
+    private func teslaShareLabel(_ destinationName: String?) -> String {
+        guard let destinationName = destinationName else {
+            return "Dropped pin"
         }
+
+        let normalizedName = destinationName
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "[\\r\\n]+", with: " ", options: .regularExpression)
+        return normalizedName.isEmpty ? "Dropped pin" : normalizedName
     }
 
     private func encoded(_ value: String) -> String {
