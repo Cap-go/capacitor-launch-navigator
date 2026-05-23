@@ -497,7 +497,7 @@ public class LaunchNavigator {
     }
 
     static String createGoogleMapsPositionUrl(double lat, double lon) {
-        return String.format(Locale.US, "https://maps.google.com/?q=%f,%f", lat, lon);
+        return String.format(Locale.US, "https://maps.google.com/?q=%.6f,%.6f", lat, lon);
     }
 
     private static String createTeslaShareLabel(String destinationName) {
