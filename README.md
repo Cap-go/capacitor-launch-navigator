@@ -164,7 +164,7 @@ console.log('Icon failures:', failures);
 
 - **Coordinates Only**: This plugin only accepts latitude/longitude coordinates for navigation. Address strings are not supported.
 - **Address Geocoding**: If you need to convert addresses to coordinates, use [@capgo/capacitor-nativegeocoder](https://github.com/Cap-go/capacitor-nativegeocoder).
-- **Tesla**: `app: 'tesla'` shares a Google Maps directions link to the Tesla app. Android targets the Tesla app directly; iOS opens the native share sheet because iOS does not allow selecting another app's share extension programmatically.
+- **Tesla**: `app: 'tesla'` shares a Google Maps position text to the Tesla app. Android targets the Tesla app directly; iOS opens the native share sheet because iOS does not allow selecting another app's share extension programmatically.
 
 ## Supported Navigation Apps
 
