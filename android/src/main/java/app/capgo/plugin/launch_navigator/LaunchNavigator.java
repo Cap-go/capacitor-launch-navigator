@@ -119,7 +119,13 @@ public class LaunchNavigator {
         navigationApps.put("moovit", new AppInfo("Moovit", "https://moovitapp.com", "com.tranzmate"));
         navigationApps.put("lyft", new AppInfo("Lyft", "https://www.lyft.com", "me.lyft.android"));
         navigationApps.put("mapsme", new AppInfo("MAPS.ME", "https://maps.me", "com.mapswithme.maps.pro"));
+        navigationApps.put("osmand", new AppInfo("OsmAnd", "https://osmand.net", "net.osmand", "net.osmand.plus"));
+        navigationApps.put("komoot", new AppInfo("Komoot", "https://www.komoot.com", "de.komoot.android"));
         navigationApps.put("tomtom", new AppInfo("TomTom GO", "https://www.tomtom.com", "com.tomtom.gplay.navapp"));
+        navigationApps.put(
+            "locus_map",
+            new AppInfo("Locus Map", "https://www.locusmap.app", "menion.android.locus", "menion.android.locus.pro")
+        );
         navigationApps.put("guru_maps", new AppInfo("Guru Maps", "https://gurumaps.app", "com.bodunov.galileo", "com.bodunov.GalileoPro"));
         navigationApps.put("organic_maps", new AppInfo("Organic Maps", "https://organicmaps.app", "app.organicmaps"));
         navigationApps.put("yandex_maps", new AppInfo("Yandex Maps", "https://yandex.com/maps", "ru.yandex.yandexmaps"));
@@ -187,8 +193,14 @@ public class LaunchNavigator {
                 return createLyftIntent(lat, lon);
             case "mapsme":
                 return createMapsMeIntent(lat, lon);
+            case "osmand":
+                return createOsmAndIntent(lat, lon);
+            case "komoot":
+                return createKomootIntent(lat, lon);
             case "tomtom":
                 return createTomTomIntent(lat, lon);
+            case "locus_map":
+                return createLocusMapIntent(lat, lon);
             case "guru_maps":
                 return createGuruMapsIntent(lat, lon, startLat, startLon, transportMode);
             case "organic_maps":
@@ -324,10 +336,37 @@ public class LaunchNavigator {
         return new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
     }
 
+    private Intent createOsmAndIntent(double lat, double lon) {
+        String uri = createOsmAndUri(lat, lon);
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
+        String packageName = getFirstInstalledPackage("osmand");
+        if (packageName != null) {
+            intent.setPackage(packageName);
+        }
+        return intent;
+    }
+
+    private Intent createKomootIntent(double lat, double lon) {
+        String uri = createKomootPlanUrl(lat, lon);
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
+        intent.setPackage("de.komoot.android");
+        return intent;
+    }
+
     private Intent createTomTomIntent(double lat, double lon) {
         String uri = String.format(Locale.US, "tomtomgo://x-callback-url/navigate?destination=%f,%f", lat, lon);
         Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
         intent.setPackage("com.tomtom.gplay.navapp");
+        return intent;
+    }
+
+    private Intent createLocusMapIntent(double lat, double lon) {
+        String uri = createLocusMapUri(lat, lon);
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
+        String packageName = getFirstInstalledPackage("locus_map");
+        if (packageName != null) {
+            intent.setPackage(packageName);
+        }
         return intent;
     }
 
@@ -498,6 +537,18 @@ public class LaunchNavigator {
 
     static String createGoogleMapsPositionUrl(double lat, double lon) {
         return String.format(Locale.US, "https://maps.google.com/?q=%.6f,%.6f", lat, lon);
+    }
+
+    static String createOsmAndUri(double lat, double lon) {
+        return String.format(Locale.US, "osmand.api://navigate?lat=%f&lon=%f", lat, lon);
+    }
+
+    static String createKomootPlanUrl(double lat, double lon) {
+        return String.format(Locale.US, "https://www.komoot.com/plan/@%f,%f", lat, lon);
+    }
+
+    static String createLocusMapUri(double lat, double lon) {
+        return String.format(Locale.US, "locus://navigation?lat=%f&lon=%f", lat, lon);
     }
 
     private static String createTeslaShareLabel(String destinationName) {

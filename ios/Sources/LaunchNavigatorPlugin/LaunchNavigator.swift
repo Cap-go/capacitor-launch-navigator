@@ -28,6 +28,8 @@ struct NavigationAppInfo {
         "moovit": NavigationAppInfo(name: "Moovit", urlScheme: "moovit://", url: "https://moovitapp.com"),
         "lyft": NavigationAppInfo(name: "Lyft", urlScheme: "lyft://", url: "https://www.lyft.com"),
         "mapsme": NavigationAppInfo(name: "MAPS.ME", urlScheme: "mapsme://", url: "https://maps.me"),
+        "osmand": NavigationAppInfo(name: "OsmAnd", urlScheme: "osmandmaps://", url: "https://osmand.net"),
+        "komoot": NavigationAppInfo(name: "Komoot", urlScheme: "komoot://", url: "https://www.komoot.com"),
         "guru_maps": NavigationAppInfo(name: "Guru Maps", urlScheme: "guru://", url: "https://gurumaps.app"),
         "organic_maps": NavigationAppInfo(name: "Organic Maps", urlScheme: "om://", url: "https://organicmaps.app"),
         "yandex_maps": NavigationAppInfo(name: "Yandex Maps", urlScheme: "yandexmaps://", url: "https://yandex.com/maps"),
@@ -119,6 +121,16 @@ struct NavigationAppInfo {
             )
         case "mapsme":
             launchMapsMe(
+                destination: destination,
+                completion: completion
+            )
+        case "osmand":
+            launchOsmAnd(
+                destination: destination,
+                completion: completion
+            )
+        case "komoot":
+            launchKomoot(
                 destination: destination,
                 completion: completion
             )
@@ -348,6 +360,27 @@ struct NavigationAppInfo {
         completion: @escaping (Bool, String?) -> Void
     ) {
         let urlString = "mapsme://map?ll=\(destination.latitude),\(destination.longitude)"
+        openURL(urlString, completion: completion)
+    }
+
+    private func launchOsmAnd(
+        destination: CLLocationCoordinate2D,
+        completion: @escaping (Bool, String?) -> Void
+    ) {
+        let urlString = "osmandmaps://navigate?lat=\(destination.latitude)&lon=\(destination.longitude)"
+        openURL(urlString, completion: completion)
+    }
+
+    private func launchKomoot(
+        destination: CLLocationCoordinate2D,
+        completion: @escaping (Bool, String?) -> Void
+    ) {
+        guard isAppAvailable(app: "komoot") else {
+            completion(false, "App not installed or URL scheme not supported")
+            return
+        }
+
+        let urlString = "https://www.komoot.com/plan/@\(destination.latitude),\(destination.longitude)"
         openURL(urlString, completion: completion)
     }
 
