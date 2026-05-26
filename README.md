@@ -52,6 +52,8 @@ Add URL schemes to your `Info.plist` to detect installed navigation apps:
     <string>moovit</string>
     <string>lyft</string>
     <string>mapsme</string>
+    <string>osmandmaps</string>
+    <string>komoot</string>
     <string>guru</string>
     <string>om</string>
     <string>yandexmaps</string>
@@ -87,7 +89,12 @@ The following navigation apps are declared in the plugin's manifest:
     <package android:name="com.tranzmate" />
     <package android:name="me.lyft.android" />
     <package android:name="com.mapswithme.maps.pro" />
+    <package android:name="net.osmand" />
+    <package android:name="net.osmand.plus" />
+    <package android:name="de.komoot.android" />
     <package android:name="com.tomtom.gplay.navapp" />
+    <package android:name="menion.android.locus" />
+    <package android:name="menion.android.locus.pro" />
     <package android:name="com.bodunov.galileo" />
     <package android:name="com.bodunov.GalileoPro" />
     <package android:name="app.organicmaps" />
@@ -183,6 +190,8 @@ console.log('Icon failures:', failures);
 - Moovit
 - Lyft
 - MAPS.ME
+- OsmAnd
+- Komoot
 - Guru Maps
 - Organic Maps
 - Yandex Maps
@@ -204,7 +213,10 @@ console.log('Icon failures:', failures);
 - Moovit
 - Lyft
 - MAPS.ME
+- OsmAnd
+- Komoot
 - TomTom GO
+- Locus Map
 - Guru Maps
 - Organic Maps
 - Yandex Maps
@@ -519,6 +531,8 @@ Construct a type with a set of properties K of type T
 | **`MOOVIT`**           | <code>'moovit'</code>         |
 | **`LYFT`**             | <code>'lyft'</code>           |
 | **`MAPS_ME`**          | <code>'mapsme'</code>         |
+| **`OSMAND`**           | <code>'osmand'</code>         |
+| **`KOMOOT`**           | <code>'komoot'</code>         |
 | **`GURU_MAPS`**        | <code>'guru_maps'</code>      |
 | **`ORGANIC_MAPS`**     | <code>'organic_maps'</code>   |
 | **`YANDEX_MAPS`**      | <code>'yandex_maps'</code>    |
@@ -544,7 +558,10 @@ Construct a type with a set of properties K of type T
 | **`MOOVIT`**       | <code>'moovit'</code>       |
 | **`LYFT`**         | <code>'lyft'</code>         |
 | **`MAPS_ME`**      | <code>'mapsme'</code>       |
+| **`OSMAND`**       | <code>'osmand'</code>       |
+| **`KOMOOT`**       | <code>'komoot'</code>       |
 | **`TOMTOM`**       | <code>'tomtom'</code>       |
+| **`LOCUS_MAP`**    | <code>'locus_map'</code>    |
 | **`GURU_MAPS`**    | <code>'guru_maps'</code>    |
 | **`ORGANIC_MAPS`** | <code>'organic_maps'</code> |
 | **`YANDEX_MAPS`**  | <code>'yandex_maps'</code>  |

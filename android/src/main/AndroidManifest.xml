@@ -12,7 +12,12 @@
         <package android:name="com.tranzmate" />
         <package android:name="me.lyft.android" />
         <package android:name="com.mapswithme.maps.pro" />
+        <package android:name="net.osmand" />
+        <package android:name="net.osmand.plus" />
+        <package android:name="de.komoot.android" />
         <package android:name="com.tomtom.gplay.navapp" />
+        <package android:name="menion.android.locus" />
+        <package android:name="menion.android.locus.pro" />
         <package android:name="com.bodunov.galileo" />
         <package android:name="com.bodunov.GalileoPro" />
         <package android:name="app.organicmaps" />

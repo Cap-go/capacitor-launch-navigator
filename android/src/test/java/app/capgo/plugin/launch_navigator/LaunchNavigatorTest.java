@@ -7,6 +7,27 @@ import org.junit.Test;
 public class LaunchNavigatorTest {
 
     @Test
+    public void createOsmAndUriUsesNavigationScheme() {
+        String uri = LaunchNavigator.createOsmAndUri(47.620500, -122.349300);
+
+        assertEquals("osmand.api://navigate?lat=47.620500&lon=-122.349300", uri);
+    }
+
+    @Test
+    public void createKomootPlanUrlUsesPlanEndpoint() {
+        String url = LaunchNavigator.createKomootPlanUrl(47.620500, -122.349300);
+
+        assertEquals("https://www.komoot.com/plan/@47.620500,-122.349300", url);
+    }
+
+    @Test
+    public void createLocusMapUriUsesNavigationScheme() {
+        String uri = LaunchNavigator.createLocusMapUri(47.620500, -122.349300);
+
+        assertEquals("locus://navigation?lat=47.620500&lon=-122.349300", uri);
+    }
+
+    @Test
     public void createTeslaShareTextUsesGoogleMapsPosition() {
         String shareText = LaunchNavigator.createTeslaShareText(47.620500, -122.349300, "Space Needle");
 

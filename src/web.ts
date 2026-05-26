@@ -28,6 +28,8 @@ const BUILT_IN_ICON_PROVIDERS: IconProvider[] = [
   iconProvider('moovit', 'Moovit', 'https://moovitapp.com'),
   iconProvider('lyft', 'Lyft', 'https://www.lyft.com'),
   iconProvider('mapsme', 'MAPS.ME', 'https://maps.me'),
+  iconProvider('osmand', 'OsmAnd', 'https://osmand.net'),
+  iconProvider('komoot', 'Komoot', 'https://www.komoot.com'),
   iconProvider('guru_maps', 'Guru Maps', 'https://gurumaps.app'),
   iconProvider('organic_maps', 'Organic Maps', 'https://organicmaps.app'),
   iconProvider('yandex_maps', 'Yandex Maps', 'https://yandex.com/maps'),
@@ -42,6 +44,7 @@ const BUILT_IN_ICON_PROVIDERS: IconProvider[] = [
   iconProvider('transit_app', 'Transit App', 'https://transitapp.com'),
   iconProvider('garmin_navigon', 'Garmin Navigon', 'https://www.garmin.com'),
   iconProvider('99taxi', '99 Taxi', 'https://99app.com'),
+  iconProvider('locus_map', 'Locus Map', 'https://www.locusmap.app'),
 ];
 
 function iconProvider(app: string, name: string, url: string): IconProvider {
