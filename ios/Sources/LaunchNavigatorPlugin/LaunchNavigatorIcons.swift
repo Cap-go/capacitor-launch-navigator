@@ -368,10 +368,11 @@ extension LaunchNavigator {
 
         let customProviders = options["providers"] as? [[String: Any]] ?? []
         for providerObject in customProviders {
-            guard let app = providerObject["app"] as? String, !app.isEmpty else {
+            guard let appValue = providerObject["app"] as? String, !appValue.isEmpty else {
                 continue
             }
 
+            let app = canonicalApp(appValue)
             let existing = providers[app]
             providers[app] = IconProvider(
                 app: app,
@@ -383,7 +384,8 @@ extension LaunchNavigator {
 
         if let apps = options["apps"] as? [String], !apps.isEmpty {
             return apps.map { app in
-                providers[app] ?? IconProvider(app: app, name: nil, url: nil, iconUrl: nil)
+                let canonical = canonicalApp(app)
+                return providers[canonical] ?? IconProvider(app: canonical, name: nil, url: nil, iconUrl: nil)
             }
         }
 

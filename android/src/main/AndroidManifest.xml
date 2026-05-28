@@ -21,7 +21,13 @@
         <package android:name="ru.dublgis.dgismobile" />
         <package android:name="com.cabify.rider" />
         <package android:name="com.baidu.BaiduMap" />
+        <package android:name="com.taxis99" />
         <package android:name="com.autonavi.minimap" />
         <package android:name="com.teslamotors.tesla" />
+
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="geo" />
+        </intent>
     </queries>
 </manifest>

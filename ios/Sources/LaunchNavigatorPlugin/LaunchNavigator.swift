@@ -18,16 +18,16 @@ struct NavigationAppInfo {
         "google_maps": NavigationAppInfo(name: "Google Maps", urlScheme: "comgooglemaps://", url: "https://www.google.com/maps"),
         "waze": NavigationAppInfo(name: "Waze", urlScheme: "waze://", url: "https://www.waze.com"),
         "citymapper": NavigationAppInfo(name: "Citymapper", urlScheme: "citymapper://", url: "https://citymapper.com"),
-        "garmin_navigon": NavigationAppInfo(name: "Garmin Navigon", urlScheme: "navigon://", url: "https://www.garmin.com"),
+        "navigon": NavigationAppInfo(name: "Garmin Navigon", urlScheme: "navigon://", url: "https://www.garmin.com"),
         "transit_app": NavigationAppInfo(name: "Transit App", urlScheme: "transit://", url: "https://transitapp.com"),
         "yandex": NavigationAppInfo(name: "Yandex Navigator", urlScheme: "yandexnavi://", url: "https://yandex.com/maps"),
         "uber": NavigationAppInfo(name: "Uber", urlScheme: "uber://", url: "https://www.uber.com"),
         "tomtom": NavigationAppInfo(name: "TomTom", urlScheme: "tomtomgo://", url: "https://www.tomtom.com"),
         "sygic": NavigationAppInfo(name: "Sygic", urlScheme: "com.sygic.aura://", url: "https://www.sygic.com/gps-navigation"),
-        "here": NavigationAppInfo(name: "HERE Maps", urlScheme: "here-route://", url: "https://wego.here.com"),
+        "here_maps": NavigationAppInfo(name: "HERE Maps", urlScheme: "here-route://", url: "https://wego.here.com"),
         "moovit": NavigationAppInfo(name: "Moovit", urlScheme: "moovit://", url: "https://moovitapp.com"),
         "lyft": NavigationAppInfo(name: "Lyft", urlScheme: "lyft://", url: "https://www.lyft.com"),
-        "mapsme": NavigationAppInfo(name: "MAPS.ME", urlScheme: "mapsme://", url: "https://maps.me"),
+        "maps_me": NavigationAppInfo(name: "MAPS.ME", urlScheme: "mapsme://", url: "https://maps.me"),
         "guru_maps": NavigationAppInfo(name: "Guru Maps", urlScheme: "guru://", url: "https://gurumaps.app"),
         "organic_maps": NavigationAppInfo(name: "Organic Maps", urlScheme: "om://", url: "https://organicmaps.app"),
         "yandex_maps": NavigationAppInfo(name: "Yandex Maps", urlScheme: "yandexmaps://", url: "https://yandex.com/maps"),
@@ -36,7 +36,14 @@ struct NavigationAppInfo {
         "baidu": NavigationAppInfo(name: "Baidu Maps", urlScheme: "baidumap://", url: "https://map.baidu.com"),
         "gaode": NavigationAppInfo(name: "Gaode Maps", urlScheme: "iosamap://", url: "https://www.amap.com"),
         "tesla": NavigationAppInfo(name: "Tesla", urlScheme: "tesla://", url: "https://www.tesla.com"),
-        "99taxi": NavigationAppInfo(name: "99 Taxi", urlScheme: "99app://", url: "https://99app.com")
+        "taxis_99": NavigationAppInfo(name: "99 Taxi", urlScheme: "taxis99://", url: "https://99app.com")
+    ]
+
+    let appAliases: [String: String] = [
+        "garmin_navigon": "navigon",
+        "here": "here_maps",
+        "mapsme": "maps_me",
+        "99taxi": "taxis_99"
     ]
 
     // swiftlint:disable:next cyclomatic_complexity function_body_length function_parameter_count
@@ -50,7 +57,7 @@ struct NavigationAppInfo {
         viewController: UIViewController? = nil,
         completion: @escaping (Bool, String?) -> Void
     ) {
-        switch app {
+        switch canonicalApp(app) {
         case "apple_maps":
             launchAppleMaps(
                 destination: destination,
@@ -74,6 +81,18 @@ struct NavigationAppInfo {
             )
         case "citymapper":
             launchCitymapper(
+                destination: destination,
+                start: start,
+                completion: completion
+            )
+        case "navigon":
+            launchNavigon(
+                destination: destination,
+                destinationName: destinationName,
+                completion: completion
+            )
+        case "transit_app":
+            launchTransitApp(
                 destination: destination,
                 start: start,
                 completion: completion
@@ -106,7 +125,7 @@ struct NavigationAppInfo {
                 destination: destination,
                 completion: completion
             )
-        case "here":
+        case "here_maps":
             launchHere(
                 destination: destination,
                 start: start,
@@ -117,7 +136,7 @@ struct NavigationAppInfo {
                 destination: destination,
                 completion: completion
             )
-        case "mapsme":
+        case "maps_me":
             launchMapsMe(
                 destination: destination,
                 completion: completion
@@ -166,6 +185,14 @@ struct NavigationAppInfo {
             launchGaode(
                 destination: destination,
                 start: start,
+                completion: completion
+            )
+        case "taxis_99":
+            launch99Taxi(
+                destination: destination,
+                start: start,
+                startName: startName,
+                destinationName: destinationName,
                 completion: completion
             )
         case "tesla":
@@ -260,6 +287,32 @@ struct NavigationAppInfo {
             urlString += "&startcoord=\(startCoord.latitude),\(startCoord.longitude)"
         }
 
+        openURL(urlString, completion: completion)
+    }
+
+    private func launchNavigon(
+        destination: CLLocationCoordinate2D,
+        destinationName: String?,
+        completion: @escaping (Bool, String?) -> Void
+    ) {
+        let name = destinationName.flatMap { $0.trimmedNonEmpty } ?? "Destination"
+        let urlString = "navigon://coordinate/\(encoded(name))/\(destination.longitude)/\(destination.latitude)"
+        openURL(urlString, completion: completion)
+    }
+
+    private func launchTransitApp(
+        destination: CLLocationCoordinate2D,
+        start: CLLocationCoordinate2D?,
+        completion: @escaping (Bool, String?) -> Void
+    ) {
+        var params: [String] = []
+
+        if let startCoord = start {
+            params.append("from=\(startCoord.latitude),\(startCoord.longitude)")
+        }
+
+        params.append("to=\(destination.latitude),\(destination.longitude)")
+        let urlString = "transit://directions?\(params.joined(separator: "&"))"
         openURL(urlString, completion: completion)
     }
 
@@ -490,6 +543,25 @@ struct NavigationAppInfo {
         openURL(urlString, completion: completion)
     }
 
+    private func launch99Taxi(
+        destination: CLLocationCoordinate2D,
+        start: CLLocationCoordinate2D?,
+        startName: String?,
+        destinationName: String?,
+        completion: @escaping (Bool, String?) -> Void
+    ) {
+        guard let startCoord = start else {
+            completion(false, "Start location is required for 99 Taxi")
+            return
+        }
+
+        let pickupTitle = encoded(startName.flatMap { $0.trimmedNonEmpty } ?? "Pickup")
+        let dropoffTitle = encoded(destinationName.flatMap { $0.trimmedNonEmpty } ?? "Dropoff")
+        let urlString = "taxis99://call?pickup_latitude=\(startCoord.latitude)&pickup_longitude=\(startCoord.longitude)&pickup_title=\(pickupTitle)&dropoff_latitude=\(destination.latitude)&dropoff_longitude=\(destination.longitude)&dropoff_title=\(dropoffTitle)&deep_link_product_id=316&client_id=MAP_123"
+
+        openURL(urlString, completion: completion)
+    }
+
     private func shareToTesla(
         destination: CLLocationCoordinate2D,
         destinationName: String?,
@@ -569,8 +641,12 @@ struct NavigationAppInfo {
         }
     }
 
+    func canonicalApp(_ app: String) -> String {
+        appAliases[app] ?? app
+    }
+
     public func isAppAvailable(app: String) -> Bool {
-        guard let appInfo = navigationApps[app] else {
+        guard let appInfo = navigationApps[canonicalApp(app)] else {
             return false
         }
 
@@ -598,6 +674,13 @@ struct NavigationAppInfo {
 
     public func getSupportedApps() -> [String] {
         return Array(navigationApps.keys)
+    }
+}
+
+private extension String {
+    var trimmedNonEmpty: String? {
+        let trimmed = trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
     }
 }
 // swiftlint:enable type_body_length

@@ -6,16 +6,17 @@ export enum IOSNavigationApp {
   GOOGLE_MAPS = 'google_maps',
   WAZE = 'waze',
   CITYMAPPER = 'citymapper',
-  GARMIN_NAVIGON = 'garmin_navigon',
+  NAVIGON = 'navigon',
+  GARMIN_NAVIGON = 'navigon',
   TRANSIT_APP = 'transit_app',
   YANDEX_NAVIGATOR = 'yandex',
   UBER = 'uber',
   TOMTOM = 'tomtom',
   SYGIC = 'sygic',
-  HERE_MAPS = 'here',
+  HERE_MAPS = 'here_maps',
   MOOVIT = 'moovit',
   LYFT = 'lyft',
-  MAPS_ME = 'mapsme',
+  MAPS_ME = 'maps_me',
   GURU_MAPS = 'guru_maps',
   ORGANIC_MAPS = 'organic_maps',
   YANDEX_MAPS = 'yandex_maps',
@@ -24,23 +25,25 @@ export enum IOSNavigationApp {
   BAIDU = 'baidu',
   GAODE = 'gaode',
   TESLA = 'tesla',
-  TAXI_99 = '99taxi',
+  TAXIS_99 = 'taxis_99',
+  TAXI_99 = 'taxis_99',
 }
 
 /**
  * Available navigation apps for Android
  */
 export enum AndroidNavigationApp {
+  GEO = 'geo',
   GOOGLE_MAPS = 'google_maps',
   WAZE = 'waze',
   CITYMAPPER = 'citymapper',
   UBER = 'uber',
   YANDEX = 'yandex',
   SYGIC = 'sygic',
-  HERE_MAPS = 'here',
+  HERE_MAPS = 'here_maps',
   MOOVIT = 'moovit',
   LYFT = 'lyft',
-  MAPS_ME = 'mapsme',
+  MAPS_ME = 'maps_me',
   TOMTOM = 'tomtom',
   GURU_MAPS = 'guru_maps',
   ORGANIC_MAPS = 'organic_maps',
@@ -50,6 +53,8 @@ export enum AndroidNavigationApp {
   CABIFY = 'cabify',
   BAIDU = 'baidu',
   GAODE = 'gaode',
+  TAXIS_99 = 'taxis_99',
+  TAXI_99 = 'taxis_99',
   TESLA = 'tesla',
 }
 
