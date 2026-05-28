@@ -60,7 +60,7 @@ Add URL schemes to your `Info.plist` to detect installed navigation apps:
     <string>baidumap</string>
     <string>iosamap</string>
     <string>tesla</string>
-    <string>99app</string>
+    <string>taxis99</string>
 </array>
 ```
 
@@ -96,8 +96,14 @@ The following navigation apps are declared in the plugin's manifest:
     <package android:name="ru.dublgis.dgismobile" />
     <package android:name="com.cabify.rider" />
     <package android:name="com.baidu.BaiduMap" />
+    <package android:name="com.taxis99" />
     <package android:name="com.autonavi.minimap" />
     <package android:name="com.teslamotors.tesla" />
+
+    <intent>
+        <action android:name="android.intent.action.VIEW" />
+        <data android:scheme="geo" />
+    </intent>
 </queries>
 ```
 
@@ -165,6 +171,9 @@ console.log('Icon failures:', failures);
 - **Coordinates Only**: This plugin only accepts latitude/longitude coordinates for navigation. Address strings are not supported.
 - **Address Geocoding**: If you need to convert addresses to coordinates, use [@capgo/capacitor-nativegeocoder](https://github.com/Cap-go/capacitor-nativegeocoder).
 - **Tesla**: `app: 'tesla'` shares a Google Maps position text to the Tesla app. Android targets the Tesla app directly; iOS opens the native share sheet because iOS does not allow selecting another app's share extension programmatically.
+- **PhoneGap app identifiers**: App IDs now match `phonegap-launch-navigator` for Navigon, HERE Maps, MAPS.ME, and 99 Taxi. Legacy IDs (`garmin_navigon`, `here`, `mapsme`, `99taxi`) are still accepted.
+- **Android geo apps**: `app: 'geo'` opens the native Android chooser for any installed app that handles the `geo:` URI scheme. `getAvailableApps()` also returns discovered `geo:` apps by package name, so apps like Locus Map, Komoot, and OsmAnd can be listed when installed.
+- **99 Taxi**: `app: 'taxis_99'` follows the PhoneGap app identifier. A start coordinate is required.
 
 ## Supported Navigation Apps
 
@@ -194,6 +203,7 @@ console.log('Icon failures:', failures);
 - 99 Taxi
 
 ### Android
+- Geo intent chooser
 - Google Maps
 - Waze
 - Citymapper
@@ -212,8 +222,10 @@ console.log('Icon failures:', failures);
 - 2GIS
 - Cabify
 - Baidu Maps
+- 99 Taxi
 - Gaode Maps
 - Tesla
+- Any installed app that supports the Android `geo:` URI scheme
 
 ## API
 
@@ -503,47 +515,50 @@ Construct a type with a set of properties K of type T
 
 #### IOSNavigationApp
 
-| Members                | Value                         |
-| ---------------------- | ----------------------------- |
-| **`APPLE_MAPS`**       | <code>'apple_maps'</code>     |
-| **`GOOGLE_MAPS`**      | <code>'google_maps'</code>    |
-| **`WAZE`**             | <code>'waze'</code>           |
-| **`CITYMAPPER`**       | <code>'citymapper'</code>     |
-| **`GARMIN_NAVIGON`**   | <code>'garmin_navigon'</code> |
-| **`TRANSIT_APP`**      | <code>'transit_app'</code>    |
-| **`YANDEX_NAVIGATOR`** | <code>'yandex'</code>         |
-| **`UBER`**             | <code>'uber'</code>           |
-| **`TOMTOM`**           | <code>'tomtom'</code>         |
-| **`SYGIC`**            | <code>'sygic'</code>          |
-| **`HERE_MAPS`**        | <code>'here'</code>           |
-| **`MOOVIT`**           | <code>'moovit'</code>         |
-| **`LYFT`**             | <code>'lyft'</code>           |
-| **`MAPS_ME`**          | <code>'mapsme'</code>         |
-| **`GURU_MAPS`**        | <code>'guru_maps'</code>      |
-| **`ORGANIC_MAPS`**     | <code>'organic_maps'</code>   |
-| **`YANDEX_MAPS`**      | <code>'yandex_maps'</code>    |
-| **`TWO_GIS`**          | <code>'2gis'</code>           |
-| **`CABIFY`**           | <code>'cabify'</code>         |
-| **`BAIDU`**            | <code>'baidu'</code>          |
-| **`GAODE`**            | <code>'gaode'</code>          |
-| **`TESLA`**            | <code>'tesla'</code>          |
-| **`TAXI_99`**          | <code>'99taxi'</code>         |
+| Members                | Value                       |
+| ---------------------- | --------------------------- |
+| **`APPLE_MAPS`**       | <code>'apple_maps'</code>   |
+| **`GOOGLE_MAPS`**      | <code>'google_maps'</code>  |
+| **`WAZE`**             | <code>'waze'</code>         |
+| **`CITYMAPPER`**       | <code>'citymapper'</code>   |
+| **`NAVIGON`**          | <code>'navigon'</code>      |
+| **`GARMIN_NAVIGON`**   | <code>'navigon'</code>      |
+| **`TRANSIT_APP`**      | <code>'transit_app'</code>  |
+| **`YANDEX_NAVIGATOR`** | <code>'yandex'</code>       |
+| **`UBER`**             | <code>'uber'</code>         |
+| **`TOMTOM`**           | <code>'tomtom'</code>       |
+| **`SYGIC`**            | <code>'sygic'</code>        |
+| **`HERE_MAPS`**        | <code>'here_maps'</code>    |
+| **`MOOVIT`**           | <code>'moovit'</code>       |
+| **`LYFT`**             | <code>'lyft'</code>         |
+| **`MAPS_ME`**          | <code>'maps_me'</code>      |
+| **`GURU_MAPS`**        | <code>'guru_maps'</code>    |
+| **`ORGANIC_MAPS`**     | <code>'organic_maps'</code> |
+| **`YANDEX_MAPS`**      | <code>'yandex_maps'</code>  |
+| **`TWO_GIS`**          | <code>'2gis'</code>         |
+| **`CABIFY`**           | <code>'cabify'</code>       |
+| **`BAIDU`**            | <code>'baidu'</code>        |
+| **`GAODE`**            | <code>'gaode'</code>        |
+| **`TESLA`**            | <code>'tesla'</code>        |
+| **`TAXIS_99`**         | <code>'taxis_99'</code>     |
+| **`TAXI_99`**          | <code>'taxis_99'</code>     |
 
 
 #### AndroidNavigationApp
 
 | Members            | Value                       |
 | ------------------ | --------------------------- |
+| **`GEO`**          | <code>'geo'</code>          |
 | **`GOOGLE_MAPS`**  | <code>'google_maps'</code>  |
 | **`WAZE`**         | <code>'waze'</code>         |
 | **`CITYMAPPER`**   | <code>'citymapper'</code>   |
 | **`UBER`**         | <code>'uber'</code>         |
 | **`YANDEX`**       | <code>'yandex'</code>       |
 | **`SYGIC`**        | <code>'sygic'</code>        |
-| **`HERE_MAPS`**    | <code>'here'</code>         |
+| **`HERE_MAPS`**    | <code>'here_maps'</code>    |
 | **`MOOVIT`**       | <code>'moovit'</code>       |
 | **`LYFT`**         | <code>'lyft'</code>         |
-| **`MAPS_ME`**      | <code>'mapsme'</code>       |
+| **`MAPS_ME`**      | <code>'maps_me'</code>      |
 | **`TOMTOM`**       | <code>'tomtom'</code>       |
 | **`GURU_MAPS`**    | <code>'guru_maps'</code>    |
 | **`ORGANIC_MAPS`** | <code>'organic_maps'</code> |
@@ -553,6 +568,8 @@ Construct a type with a set of properties K of type T
 | **`CABIFY`**       | <code>'cabify'</code>       |
 | **`BAIDU`**        | <code>'baidu'</code>        |
 | **`GAODE`**        | <code>'gaode'</code>        |
+| **`TAXIS_99`**     | <code>'taxis_99'</code>     |
+| **`TAXI_99`**      | <code>'taxis_99'</code>     |
 | **`TESLA`**        | <code>'tesla'</code>        |
 
 

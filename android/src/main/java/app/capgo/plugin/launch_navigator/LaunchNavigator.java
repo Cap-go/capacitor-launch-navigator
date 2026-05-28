@@ -3,6 +3,7 @@ package app.capgo.plugin.launch_navigator;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import com.getcapacitor.Bridge;
 import com.getcapacitor.FileUtils;
@@ -20,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -42,12 +44,25 @@ public class LaunchNavigator {
         Pattern.CASE_INSENSITIVE
     );
     private static final Pattern HREF_PATTERN = Pattern.compile("\\shref=[\"']([^\"']+)[\"']", Pattern.CASE_INSENSITIVE);
+    private static final String APP_GEO = "geo";
+    private static final String APP_HERE_MAPS = "here_maps";
+    private static final String APP_MAPS_ME = "maps_me";
+    private static final String APP_TAXIS_99 = "taxis_99";
+    private static final Map<String, String> APP_ALIASES = createAppAliases();
 
     private final Context context;
     private final Bridge bridge;
     private final Map<String, Object> iconCacheLocks = new ConcurrentHashMap<>();
     private final ReentrantReadWriteLock iconCacheDirectoryLock = new ReentrantReadWriteLock();
     private Map<String, AppInfo> navigationApps;
+
+    private static Map<String, String> createAppAliases() {
+        Map<String, String> aliases = new LinkedHashMap<>();
+        aliases.put("here", APP_HERE_MAPS);
+        aliases.put("mapsme", APP_MAPS_ME);
+        aliases.put("99taxi", APP_TAXIS_99);
+        return aliases;
+    }
 
     private static class AppInfo {
 
@@ -109,25 +124,27 @@ public class LaunchNavigator {
 
     private void initializeApps() {
         navigationApps = new LinkedHashMap<>();
+        navigationApps.put(APP_GEO, new AppInfo("[Geo intent chooser]", null));
         navigationApps.put("google_maps", new AppInfo("Google Maps", "https://www.google.com/maps", "com.google.android.apps.maps"));
         navigationApps.put("waze", new AppInfo("Waze", "https://www.waze.com", "com.waze"));
         navigationApps.put("citymapper", new AppInfo("Citymapper", "https://citymapper.com", "com.citymapper.app.release"));
         navigationApps.put("uber", new AppInfo("Uber", "https://www.uber.com", "com.ubercab"));
         navigationApps.put("yandex", new AppInfo("Yandex Navigator", "https://yandex.com/maps", "ru.yandex.yandexnavi"));
         navigationApps.put("sygic", new AppInfo("Sygic", "https://www.sygic.com/gps-navigation", "com.sygic.aura"));
-        navigationApps.put("here", new AppInfo("HERE Maps", "https://wego.here.com", "com.here.app.maps"));
+        navigationApps.put(APP_HERE_MAPS, new AppInfo("HERE Maps", "https://wego.here.com", "com.here.app.maps"));
         navigationApps.put("moovit", new AppInfo("Moovit", "https://moovitapp.com", "com.tranzmate"));
         navigationApps.put("lyft", new AppInfo("Lyft", "https://www.lyft.com", "me.lyft.android"));
-        navigationApps.put("mapsme", new AppInfo("MAPS.ME", "https://maps.me", "com.mapswithme.maps.pro"));
+        navigationApps.put(APP_MAPS_ME, new AppInfo("MAPS.ME", "https://maps.me", "com.mapswithme.maps.pro"));
+        navigationApps.put("cabify", new AppInfo("Cabify", "https://cabify.com", "com.cabify.rider"));
+        navigationApps.put("baidu", new AppInfo("Baidu Maps", "https://map.baidu.com", "com.baidu.BaiduMap"));
+        navigationApps.put(APP_TAXIS_99, new AppInfo("99 Taxi", "https://99app.com", "com.taxis99"));
+        navigationApps.put("gaode", new AppInfo("Gaode Maps", "https://www.amap.com", "com.autonavi.minimap"));
         navigationApps.put("tomtom", new AppInfo("TomTom GO", "https://www.tomtom.com", "com.tomtom.gplay.navapp"));
         navigationApps.put("guru_maps", new AppInfo("Guru Maps", "https://gurumaps.app", "com.bodunov.galileo", "com.bodunov.GalileoPro"));
         navigationApps.put("organic_maps", new AppInfo("Organic Maps", "https://organicmaps.app", "app.organicmaps"));
         navigationApps.put("yandex_maps", new AppInfo("Yandex Maps", "https://yandex.com/maps", "ru.yandex.yandexmaps"));
         navigationApps.put("mapy", new AppInfo("Mapy.com", "https://mapy.com", "cz.seznam.mapy"));
         navigationApps.put("2gis", new AppInfo("2GIS", "https://2gis.com", "ru.dublgis.dgismobile"));
-        navigationApps.put("cabify", new AppInfo("Cabify", "https://cabify.com", "com.cabify.rider"));
-        navigationApps.put("baidu", new AppInfo("Baidu Maps", "https://map.baidu.com", "com.baidu.BaiduMap"));
-        navigationApps.put("gaode", new AppInfo("Gaode Maps", "https://www.amap.com", "com.autonavi.minimap"));
         navigationApps.put("tesla", new AppInfo("Tesla", "https://www.tesla.com", "com.teslamotors.tesla"));
     }
 
@@ -142,9 +159,13 @@ public class LaunchNavigator {
         String transportMode
     ) {
         try {
-            Intent intent = createNavigationIntent(app, lat, lon, startLat, startLon, destinationName, transportMode);
+            String canonicalApp = canonicalApp(app);
+            Intent intent = createNavigationIntent(canonicalApp, lat, lon, startLat, startLon, startName, destinationName, transportMode);
 
             if (intent != null && canResolveIntent(intent)) {
+                if (APP_GEO.equals(canonicalApp)) {
+                    intent = Intent.createChooser(intent, "Select app for navigation");
+                }
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 context.startActivity(intent);
                 return true;
@@ -163,10 +184,13 @@ public class LaunchNavigator {
         double lon,
         Double startLat,
         Double startLon,
+        String startName,
         String destinationName,
         String transportMode
     ) {
         switch (app) {
+            case APP_GEO:
+                return createGeoIntent(lat, lon, destinationName, null);
             case "google_maps":
                 return createGoogleMapsIntent(lat, lon, startLat, startLon, transportMode);
             case "waze":
@@ -179,13 +203,13 @@ public class LaunchNavigator {
                 return createYandexIntent(lat, lon, startLat, startLon);
             case "sygic":
                 return createSygicIntent(lat, lon);
-            case "here":
+            case APP_HERE_MAPS:
                 return createHereIntent(lat, lon, startLat, startLon);
             case "moovit":
                 return createMoovitIntent(lat, lon, startLat, startLon);
             case "lyft":
                 return createLyftIntent(lat, lon);
-            case "mapsme":
+            case APP_MAPS_ME:
                 return createMapsMeIntent(lat, lon);
             case "tomtom":
                 return createTomTomIntent(lat, lon);
@@ -205,11 +229,37 @@ public class LaunchNavigator {
                 return createBaiduIntent(lat, lon, startLat, startLon);
             case "gaode":
                 return createGaodeIntent(lat, lon, startLat, startLon);
+            case APP_TAXIS_99:
+                return create99TaxiIntent(lat, lon, startLat, startLon, destinationName, startName);
             case "tesla":
                 return createTeslaIntent(lat, lon, destinationName);
             default:
-                return null;
+                String geoPackageName = getAvailableGeoPackage(app);
+                return geoPackageName == null ? null : createGeoIntent(lat, lon, destinationName, geoPackageName);
         }
+    }
+
+    private String canonicalApp(String app) {
+        if (app == null) {
+            return null;
+        }
+        String alias = APP_ALIASES.get(app);
+        return alias == null ? app : alias;
+    }
+
+    private Intent createGeoIntent(double lat, double lon, String destinationName, String packageName) {
+        String destination = String.format(Locale.US, "%f,%f", lat, lon);
+        String query = destination;
+        if (destinationName != null && !destinationName.trim().isEmpty()) {
+            query += "(" + destinationName.trim() + ")";
+        }
+
+        String uri = String.format(Locale.US, "geo:%f,%f?q=%s", lat, lon, Uri.encode(query, ",()"));
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
+        if (packageName != null) {
+            intent.setPackage(packageName);
+        }
+        return intent;
     }
 
     private Intent createGoogleMapsIntent(double lat, double lon, Double startLat, Double startLon, String transportMode) {
@@ -484,6 +534,34 @@ public class LaunchNavigator {
         return intent;
     }
 
+    private Intent create99TaxiIntent(double lat, double lon, Double startLat, Double startLon, String destinationName, String startName) {
+        if (startLat == null || startLon == null) {
+            return null;
+        }
+
+        String uri = String.format(
+            Locale.US,
+            "taxis99://call?dropoff_latitude=%f&dropoff_longitude=%f&dropoff_title=%s&pickup_latitude=%f&pickup_longitude=%f&pickup_title=%s&deep_link_product_id=316&client_id=MAP_123",
+            lat,
+            lon,
+            Uri.encode(normalizedLabel(destinationName, "Dropoff")),
+            startLat,
+            startLon,
+            Uri.encode(normalizedLabel(startName, "Pickup"))
+        );
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
+        intent.setPackage("com.taxis99");
+        return intent;
+    }
+
+    private String normalizedLabel(String label, String fallback) {
+        if (label == null) {
+            return fallback;
+        }
+        String normalized = label.trim();
+        return normalized.isEmpty() ? fallback : normalized;
+    }
+
     private Intent createTeslaIntent(double lat, double lon, String destinationName) {
         Intent intent = new Intent(Intent.ACTION_SEND);
         intent.setType("text/plain");
@@ -510,7 +588,7 @@ public class LaunchNavigator {
     }
 
     public boolean isAppAvailable(String app) {
-        Intent intent = createNavigationIntent(app, 0, 0, null, null, null, "driving");
+        Intent intent = createNavigationIntent(canonicalApp(app), 0, 0, null, null, null, null, "driving");
         return intent != null && canResolveIntent(intent);
     }
 
@@ -519,8 +597,54 @@ public class LaunchNavigator {
         return intent.resolveActivity(pm) != null || !pm.queryIntentActivities(intent, 0).isEmpty();
     }
 
+    private String getAvailableGeoPackage(String app) {
+        if (app == null || app.isEmpty()) {
+            return null;
+        }
+        return discoverGeoApps().containsKey(app) ? app : null;
+    }
+
+    private Map<String, String> discoverGeoApps() {
+        Map<String, String> apps = new LinkedHashMap<>();
+        PackageManager pm = context.getPackageManager();
+        List<ResolveInfo> resolveInfoList = pm.queryIntentActivities(createGeoIntent(0, 0, null, null), 0);
+
+        for (ResolveInfo resolveInfo : resolveInfoList) {
+            if (resolveInfo.activityInfo == null || resolveInfo.activityInfo.packageName == null) {
+                continue;
+            }
+
+            String packageName = resolveInfo.activityInfo.packageName;
+            if (!isKnownAppPackage(packageName)) {
+                apps.put(packageName, getAppLabel(packageName));
+            }
+        }
+
+        return apps;
+    }
+
+    private boolean isKnownAppPackage(String packageName) {
+        for (AppInfo appInfo : navigationApps.values()) {
+            for (String knownPackageName : appInfo.packageNames) {
+                if (knownPackageName.equals(packageName)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private String getAppLabel(String packageName) {
+        PackageManager pm = context.getPackageManager();
+        try {
+            return pm.getApplicationLabel(pm.getApplicationInfo(packageName, 0)).toString();
+        } catch (PackageManager.NameNotFoundException e) {
+            return packageName;
+        }
+    }
+
     private String getFirstInstalledPackage(String app) {
-        AppInfo appInfo = navigationApps.get(app);
+        AppInfo appInfo = navigationApps.get(canonicalApp(app));
         if (appInfo == null) {
             return null;
         }
@@ -943,7 +1067,9 @@ public class LaunchNavigator {
         Map<String, IconProvider> providers = new LinkedHashMap<>();
 
         for (Map.Entry<String, AppInfo> entry : navigationApps.entrySet()) {
-            providers.put(entry.getKey(), new IconProvider(entry.getKey(), entry.getValue().name, entry.getValue().url, null));
+            if (entry.getValue().url != null) {
+                providers.put(entry.getKey(), new IconProvider(entry.getKey(), entry.getValue().name, entry.getValue().url, null));
+            }
         }
 
         JSONArray customProviders = options.optJSONArray("providers");
@@ -954,7 +1080,7 @@ public class LaunchNavigator {
                     continue;
                 }
 
-                String app = providerObject.optString("app", "");
+                String app = canonicalApp(providerObject.optString("app", ""));
                 if (app.isEmpty()) {
                     continue;
                 }
@@ -971,7 +1097,7 @@ public class LaunchNavigator {
         if (apps != null && apps.length() > 0) {
             IconProvider[] selected = new IconProvider[apps.length()];
             for (int i = 0; i < apps.length(); i++) {
-                String app = apps.optString(i, "");
+                String app = canonicalApp(apps.optString(i, ""));
                 IconProvider provider = providers.get(app);
                 selected[i] = provider == null ? new IconProvider(app, null, null, null) : provider;
             }
@@ -1069,6 +1195,14 @@ public class LaunchNavigator {
             apps.put(appObject);
         }
 
+        for (Map.Entry<String, String> entry : discoverGeoApps().entrySet()) {
+            JSObject appObject = new JSObject();
+            appObject.put("app", entry.getKey());
+            appObject.put("name", entry.getValue());
+            appObject.put("available", true);
+            apps.put(appObject);
+        }
+
         return apps;
     }
 
@@ -1077,6 +1211,10 @@ public class LaunchNavigator {
 
         for (String appKey : navigationApps.keySet()) {
             apps.put(appKey);
+        }
+
+        for (String packageName : discoverGeoApps().keySet()) {
+            apps.put(packageName);
         }
 
         return apps;

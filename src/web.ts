@@ -16,6 +16,12 @@ import type {
 const DEFAULT_ICON_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 const ICON_CACHE_NAME = 'capgo-launch-navigator-icons';
 const ICON_METADATA_PREFIX = 'capgo-launch-navigator-icon:';
+const APP_ALIASES: Record<string, string> = {
+  garmin_navigon: 'navigon',
+  here: 'here_maps',
+  mapsme: 'maps_me',
+  '99taxi': 'taxis_99',
+};
 
 const BUILT_IN_ICON_PROVIDERS: IconProvider[] = [
   iconProvider('google_maps', 'Google Maps', 'https://www.google.com/maps'),
@@ -24,10 +30,10 @@ const BUILT_IN_ICON_PROVIDERS: IconProvider[] = [
   iconProvider('uber', 'Uber', 'https://www.uber.com'),
   iconProvider('yandex', 'Yandex Navigator', 'https://yandex.com/maps'),
   iconProvider('sygic', 'Sygic', 'https://www.sygic.com/gps-navigation'),
-  iconProvider('here', 'HERE Maps', 'https://wego.here.com'),
+  iconProvider('here_maps', 'HERE Maps', 'https://wego.here.com'),
   iconProvider('moovit', 'Moovit', 'https://moovitapp.com'),
   iconProvider('lyft', 'Lyft', 'https://www.lyft.com'),
-  iconProvider('mapsme', 'MAPS.ME', 'https://maps.me'),
+  iconProvider('maps_me', 'MAPS.ME', 'https://maps.me'),
   iconProvider('guru_maps', 'Guru Maps', 'https://gurumaps.app'),
   iconProvider('organic_maps', 'Organic Maps', 'https://organicmaps.app'),
   iconProvider('yandex_maps', 'Yandex Maps', 'https://yandex.com/maps'),
@@ -40,8 +46,8 @@ const BUILT_IN_ICON_PROVIDERS: IconProvider[] = [
   iconProvider('apple_maps', 'Apple Maps', 'https://www.apple.com/maps/'),
   iconProvider('tomtom', 'TomTom', 'https://www.tomtom.com'),
   iconProvider('transit_app', 'Transit App', 'https://transitapp.com'),
-  iconProvider('garmin_navigon', 'Garmin Navigon', 'https://www.garmin.com'),
-  iconProvider('99taxi', '99 Taxi', 'https://99app.com'),
+  iconProvider('navigon', 'Garmin Navigon', 'https://www.garmin.com'),
+  iconProvider('taxis_99', '99 Taxi', 'https://99app.com'),
 ];
 
 function iconProvider(app: string, name: string, url: string): IconProvider {
@@ -271,15 +277,23 @@ function resolveIconProviders(options: GetAppIconsOptions): IconProvider[] {
   const customProviders = options.providers || [];
 
   for (const provider of customProviders) {
-    const app = String(provider.app);
+    const app = canonicalApp(provider.app);
     builtIns.set(app, { ...builtIns.get(app), ...provider, app });
   }
 
   if (options.apps && options.apps.length > 0) {
-    return options.apps.map((app) => builtIns.get(String(app)) || { app: String(app) });
+    return options.apps.map((app) => {
+      const canonical = canonicalApp(app);
+      return builtIns.get(canonical) || { app: canonical };
+    });
   }
 
   return Array.from(builtIns.values());
+}
+
+function canonicalApp(app: IconProvider['app']): string {
+  const appId = String(app);
+  return APP_ALIASES[appId] || appId;
 }
 
 function normalizeMaxAge(maxAgeMs: number | undefined): number {
