@@ -226,7 +226,7 @@ struct NavigationAppInfo {
         case "walking":
             options[MKLaunchOptionsDirectionsModeKey] = MKLaunchOptionsDirectionsModeWalking
         case "bicycling":
-            options[MKLaunchOptionsDirectionsModeKey] = MKLaunchOptionsDirectionsModeCycling
+            options[MKLaunchOptionsDirectionsModeKey] = "MKLaunchOptionsDirectionsModeCycling"
         case "transit":
             options[MKLaunchOptionsDirectionsModeKey] = MKLaunchOptionsDirectionsModeTransit
         default:
