@@ -4,7 +4,7 @@ import pkg from './package.json';
 
 const config: CapacitorConfig = {
   appId: 'app.capgo.launch.navigator',
-  appName: 'Launch Navigator Example',
+  appName: '@capgo/capacitor-launch-navigator',
   webDir: 'dist',
   plugins: {
     SplashScreen: {
