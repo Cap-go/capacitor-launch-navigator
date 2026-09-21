@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-duplicate-enum-values -- backward-compatible aliases share runtime values */
+
 /**
  * Available navigation apps for iOS
  */
