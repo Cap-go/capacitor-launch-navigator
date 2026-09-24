@@ -19,7 +19,7 @@ jobs:
         with:
           node-version: 24.x
       - name: Check out
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - name: Enforce capacitor-swift-pm version
         run: |
           set -euo pipefail
@@ -37,7 +37,7 @@ jobs:
         with:
           node-version: 24.x
       - name: Check out
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - uses: oven-sh/setup-bun@v2
       - name: Install dependencies
         id: install_code
@@ -67,7 +67,7 @@ jobs:
         with:
           node-version: 24.x
       - name: Check out
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - uses: oven-sh/setup-bun@v2
       - name: Install dependencies
         id: install_code
@@ -93,7 +93,7 @@ jobs:
         with:
           node-version: 24.x
       - name: Check out
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - uses: oven-sh/setup-bun@v2
       - name: Install dependencies
         id: install_code
