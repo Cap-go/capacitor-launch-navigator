@@ -1,10 +1,27 @@
 # @capgo/capacitor-launch-navigator
-<a href="https://capgo.app/"><img src="https://capgo.app/readme-banner.svg?repo=Cap-go/capacitor-launch-navigator" alt="Capgo - Instant updates for Capacitor" /></a>
+
+Open turn-by-turn directions in the user's favorite navigation app, such as Apple Maps, Google Maps or Waze, from your Capacitor app. A Capacitor port of phonegap-launch-navigator.
+
+<a href="https://capgo.app/?ref=plugin_launch_navigator"><img src="https://capgo.app/readme-banner.svg?repo=Cap-go/capacitor-launch-navigator" alt="Capgo - Instant updates for Capacitor" /></a>
 
 <div align="center">
-  <h2><a href="https://capgo.app/?ref=plugin_launch_navigator"> ➡️ Get Instant updates for your App with Capgo</a></h2>
-  <h2><a href="https://capgo.app/consulting/?ref=plugin_launch_navigator"> Missing a feature? We’ll build the plugin for you 💪</a></h2>
+  <p><b>Capgo</b>: open-source live updates for Ionic and Capacitor apps. Ship OTA fixes and features instantly, without waiting for app store review.</p>
+  <h2><a href="https://capgo.app/register/?ref=plugin_launch_navigator">➡️ Get started for free</a></h2>
+  <p>14-day unlimited free trial. No credit card required</p>
+  <p><a href="https://capgo.app/consulting/?ref=plugin_launch_navigator">Missing a feature? We'll build the plugin for you 💪</a></p>
 </div>
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Cap-go/capacitor-launch-navigator/main/assets/github-social-preview.png" alt="@capgo/capacitor-launch-navigator for Capacitor apps" width="300" />
+</p>
+
+## Key features
+
+- **Navigate**: `navigate()` opens directions to latitude and longitude coordinates, with an optional start point.
+- **App discovery**: `getAvailableApps()`, `getSupportedApps()`, `isAppAvailable()` and `getDefaultApp()`.
+- **Provider icons**: `getAppIcons()`, `refreshAppIcons()` and `clearIconCache()` to build your own app chooser.
+- **Native defaults**: Apple Maps through MapKit on iOS and intents on Android.
+- **Platforms**: iOS, Android and Web. On web, `navigate()` opens a maps link in the browser.
 
 Capacitor plugin for launching navigation apps to navigate to a destination.
 
