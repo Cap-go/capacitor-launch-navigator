@@ -17,7 +17,7 @@ Open turn-by-turn directions in the user's favorite navigation app, such as Appl
 
 ## Key features
 
-- **Navigate**: `navigate()` opens directions to coordinates or an address, with an optional start point and travel mode.
+- **Navigate**: `navigate()` opens directions to latitude and longitude coordinates, with an optional start point.
 - **App discovery**: `getAvailableApps()`, `getSupportedApps()`, `isAppAvailable()` and `getDefaultApp()`.
 - **Provider icons**: `getAppIcons()`, `refreshAppIcons()` and `clearIconCache()` to build your own app chooser.
 - **Native defaults**: Apple Maps through MapKit on iOS and intents on Android.
