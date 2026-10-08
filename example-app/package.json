@@ -14,7 +14,6 @@
   },
   "dependencies": {
     "@capacitor/android": "^8.5.2",
-    "@capacitor/camera": "^8.0.0",
     "@capacitor/core": "^8.5.2",
     "@capacitor/ios": "^8.5.2",
     "@capacitor/splash-screen": "^8.0.0",
@@ -23,8 +22,8 @@
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.2",
-    "vite": "^8.3.0",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vite": "^8.3.0"
   },
   "author": "",
   "license": "ISC"
