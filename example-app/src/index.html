@@ -2,33 +2,125 @@
 <html lang="en" dir="ltr">
   <head>
     <meta charset="UTF-8" />
-    
     <meta
       name="viewport"
       content="viewport-fit=cover, width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
     <meta name="format-detection" content="telephone=no" />
     <meta name="msapplication-tap-highlight" content="no" />
-<title>@capgo/capacitor-launch-navigator</title>
-
-
-<script
-      type="module"
-      src="https://unpkg.com/@ionic/pwa-elements@latest/dist/ionicpwaelements/ionicpwaelements.esm.js"
-    ></script>
-    <script
-      nomodule
-      src="https://unpkg.com/@ionic/pwa-elements@latest/dist/ionicpwaelements/ionicpwaelements.js"
-    ></script>
-
+    <title>@capgo/capacitor-launch-navigator Example</title>
     <link rel="icon" type="image/x-icon" href="./assets/icon/favicon.ico" />
     <link rel="manifest" href="./manifest.json" />
     <link rel="stylesheet" href="./css/style.css" />
-    <meta name="theme-color" content="#31d53d" />
+    <meta name="theme-color" content="#1a6b8a" />
   </head>
   <body>
-    <capacitor-welcome></capacitor-welcome>
+    <main class="shell">
+      <header class="hero">
+        <p class="eyebrow">Capgo plugin example</p>
+        <h1>Launch Navigator</h1>
+        <p class="lead">
+          Pick a destination, choose a navigation app and travel mode, then open turn-by-turn or map view on a device.
+          On web, navigation opens Google Maps in a new tab.
+        </p>
+        <div class="chip-row" aria-label="Status">
+          <span id="chip-platform" class="chip">Platform</span>
+          <span id="chip-default-app" class="chip">Default app</span>
+          <span id="chip-apps-count" class="chip">Apps</span>
+          <span id="chip-version" class="chip ghost">Version</span>
+        </div>
+      </header>
 
-    <script src="./js/capacitor-welcome.js" type="module"></script>
+      <section class="panel">
+        <h2 class="panel-title">Destination</h2>
+        <label class="field">
+          <span class="label">Place name</span>
+          <input id="destination-name" type="text" value="1 Apple Park Way, Cupertino, CA 95014" autocomplete="off" />
+        </label>
+        <div class="field-row">
+          <label class="field">
+            <span class="label">Latitude</span>
+            <input id="destination-lat" type="number" step="any" value="37.3349" />
+          </label>
+          <label class="field">
+            <span class="label">Longitude</span>
+            <input id="destination-lng" type="number" step="any" value="-122.0090" />
+          </label>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Optional start</h2>
+        <label class="field">
+          <span class="label">Start name</span>
+          <input id="start-name" type="text" placeholder="Leave empty for current location" autocomplete="off" />
+        </label>
+        <div class="field-row">
+          <label class="field">
+            <span class="label">Start latitude</span>
+            <input id="start-lat" type="number" step="any" placeholder="Optional" />
+          </label>
+          <label class="field">
+            <span class="label">Start longitude</span>
+            <input id="start-lng" type="number" step="any" placeholder="Optional" />
+          </label>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Navigation options</h2>
+        <label class="field">
+          <span class="label">Travel mode</span>
+          <select id="transport-mode">
+            <option value="driving">Driving</option>
+            <option value="walking">Walking</option>
+            <option value="bicycling">Bicycling</option>
+            <option value="transit">Transit</option>
+          </select>
+        </label>
+        <label class="field">
+          <span class="label">Launch mode</span>
+          <select id="launch-mode">
+            <option value="turn_by_turn">Turn by turn</option>
+            <option value="maps">Maps</option>
+            <option value="geo">Geo URI</option>
+          </select>
+        </label>
+        <label class="field">
+          <span class="label">Preferred app</span>
+          <select id="app-picker">
+            <option value="">System default or chooser</option>
+          </select>
+        </label>
+        <label class="check-field">
+          <input id="enable-debug" type="checkbox" />
+          <span>Enable debug logging</span>
+        </label>
+        <button id="launch-navigate" type="button" class="primary">Launch navigation</button>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title">Available apps</h2>
+          <button id="refresh-apps" type="button" class="ghost small">Refresh list</button>
+        </div>
+        <ul id="apps-list" class="apps-list" aria-label="Navigation apps on device"></ul>
+      </section>
+
+      <section class="panel">
+        <h2 class="panel-title">Plugin tools</h2>
+        <div class="actions">
+          <button id="get-supported" type="button" class="ghost">Supported apps</button>
+          <button id="get-default" type="button" class="ghost">Default app</button>
+          <button id="check-app" type="button" class="ghost">Check selected app</button>
+          <button id="get-icons" type="button" class="ghost">Get app icons</button>
+          <button id="refresh-icons" type="button" class="ghost">Refresh icons</button>
+          <button id="clear-icon-cache" type="button" class="ghost danger">Clear icon cache</button>
+          <button id="get-version" type="button" class="ghost">Plugin version</button>
+        </div>
+        <pre id="plugin-output" aria-live="polite">Loading...</pre>
+      </section>
+    </main>
+    <script src="./js/main.js" type="module"></script>
   </body>
 </html>
