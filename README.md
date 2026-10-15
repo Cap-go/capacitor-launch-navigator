@@ -529,9 +529,7 @@ Options for clearing cached provider icons.
 
 Construct a type with a set of properties K of type T
 
-<code>{
- [P in K]: T;
- }</code>
+<code>{ [P in K]: T; }</code>
 
 
 ### Enums
