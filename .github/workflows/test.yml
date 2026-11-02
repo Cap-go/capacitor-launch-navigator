@@ -17,7 +17,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: 24.x
+          node-version: 26.x
       - name: Check out
         uses: actions/checkout@v7
       - name: Enforce capacitor-swift-pm version
@@ -35,7 +35,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: 24.x
+          node-version: 26.x
       - name: Check out
         uses: actions/checkout@v7
       - uses: oven-sh/setup-bun@v2
@@ -65,7 +65,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: 24.x
+          node-version: 26.x
       - name: Check out
         uses: actions/checkout@v7
       - uses: oven-sh/setup-bun@v2
@@ -91,7 +91,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: 24.x
+          node-version: 26.x
       - name: Check out
         uses: actions/checkout@v7
       - uses: oven-sh/setup-bun@v2
